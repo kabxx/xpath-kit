@@ -9,16 +9,24 @@ from .__version__ import (
     __url__,
     __version__,
 )
+from .builders import (
+    A,
+    E,
+)
+from .exceptions import (
+    XPathError,
+    XPathEvaluationError,
+    XPathModificationError,
+    XPathSelectionError,
+)
+from .expressions import (
+    attr,
+    el,
+    expr,
+    value,
+)
 from .xpathkit import (
     XPathElement,
     XPathElementList,
-    XPathError,
-    XPathEvaluationError,
-    XPathSelectionError,
-    XPathModificationError,
-    ele,
-    attr,
-    expr,
-    value,
-    xpath,
+    html,
 )
