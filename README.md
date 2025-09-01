@@ -32,7 +32,7 @@ And say hello to a more intuitive way of writing queries:
 Install `xpath-kit` from PyPI using pip:
 
 ```bash
-pip install xpathkit
+pip install xpath-kit
 ```
 
 The library requires `lxml` as a dependency, which will be installed automatically.
