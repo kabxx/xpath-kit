@@ -12,7 +12,7 @@ Say goodbye to messy, hard-to-read XPath strings:
 
 And say hello to a more intuitive way of writing queries:
 
-`ele("div")[(attr("id") == "main") & (attr("class").any("content")] / "ul" / ele("li")[0`
+`ele("div")[(attr("id") == "main") & (attr("class").any("content")] / "ul" / ele("li")[0]`
 
 ---
 
