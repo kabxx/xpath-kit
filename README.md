@@ -1,10 +1,10 @@
-# xpathkit
+# xpath-kit
 
-[![PyPI Version](https://img.shields.io/pypi/v/xpathkit.svg)](https://pypi.org/project/xpathkit/)
+[![PyPI Version](https://img.shields.io/pypi/v/xpath-kit.svg)](https://pypi.org/project/xpath-kit/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Versions](https://img.shields.io/pypi/pyversions/xpathkit.svg)](https://pypi.org/project/xpathkit/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/xpath-kit.svg)](https://pypi.org/project/xpath-kit/)
 
-**xpathkit** is a Python library that provides a fluent, object-oriented, and Pythonic interface for building and executing XPath queries on top of `lxml`. It transforms complex XPath string composition into a readable and maintainable chain of objects and methods.
+**xpath-kit** is a Python library that provides a fluent, object-oriented, and Pythonic interface for building and executing XPath queries on top of `lxml`. It transforms complex XPath string composition into a readable and maintainable chain of objects and methods.
 
 Say goodbye to messy, hard-to-read XPath strings:
 
@@ -29,7 +29,7 @@ And say hello to a more intuitive way of writing queries:
 
 ## Installation
 
-Install `xpathkit` from PyPI using pip:
+Install `xpath-kit` from PyPI using pip:
 
 ```bash
 pip install xpathkit
@@ -41,7 +41,7 @@ The library requires `lxml` as a dependency, which will be installed automatical
 
 ## Quick Start
 
-Here's a simple example of how to use `xpathkit` to parse a piece of HTML and extract information.
+Here's a simple example of how to use `xpath-kit` to parse a piece of HTML and extract information.
 
 ```python
 from xpathkit import xpath, ele, attr

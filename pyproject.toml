@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "xpathkit"
+name = "xpath-kit"
 version = "0.1.0"
 description = "A toolkit for convenient and expressive XPath operations based on lxml."
 authors = [{ name = "Kabxx", email = "2201174299@qq.com" }]
