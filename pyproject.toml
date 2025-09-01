@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xpath-kit"
-version = "0.1.0"
+version = "0.1.1"
 description = "A toolkit for convenient and expressive XPath operations based on lxml."
 authors = [{ name = "Kabxx", email = "2201174299@qq.com" }]
 license = { file = "LICENSE" }
