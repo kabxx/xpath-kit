@@ -213,11 +213,30 @@ class attr(_pred):
         )
         return self
 
+    def neq(
+        self,
+        value: Any,
+    ) -> "attr":
+        """Add an inequality condition for the attribute."""
+        self._conds.append(
+            (
+                "and",
+                f'@{self._name}!="{xpath_str(value)}"',
+            )
+        )
+        return self
+
     def __eq__(
         self,
         value: Any,
     ) -> "attr":
         return self.eq(value)
+
+    def __ne__(
+        self,
+        value: Any,
+    ):
+        return self.neq(value)
 
     def all(
         self,
