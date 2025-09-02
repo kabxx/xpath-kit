@@ -212,6 +212,12 @@ class XPathElement:
         """Insert a child element at the given position."""
         self._ele.insert(index, child._ele)
 
+    def raw(
+        self,
+    ) -> lxml.etree._Element:
+        """return the raw lxml.etree._Element handle."""
+        return self._ele
+
 
 class XPathElementList:
     """
@@ -275,10 +281,17 @@ class XPathElementList:
 
     def __getitem__(
         self,
-        index: int,
+        key: int,
     ) -> XPathElement:
         """Get the element at the specified index."""
-        return self._eles[index]
+        if isinstance(key, int):
+            return self._eles[key]
+        elif isinstance(key, slice):
+            return XPathElementList(
+                [e.raw() for e in self._eles[key.start : key.stop : key.step]]
+            )
+        else:
+            raise TypeError
 
     def filter(
         self,
@@ -307,6 +320,12 @@ class XPathElementList:
     ) -> List[XPathElement]:
         """Return the underlying list of XPathElement objects."""
         return self._eles
+
+    def __iter__(
+        self,
+    ):
+        """Return an iterator over the elements."""
+        return iter(self._eles)
 
 
 def html(

@@ -1,3 +1,4 @@
+import lxml.etree
 import pytest
 
 from xpathkit import (
@@ -467,3 +468,25 @@ def test_xpathelement_xpath_return_types(html_doc):
     assert isinstance(class_list, list)
     assert all(isinstance(c, str) for c in class_list)
     assert "item active" in class_list
+
+
+def test_xpathelement_raw_handle(html_doc):
+    root = html(html_doc)
+    div = root.descendant(ele("div")[attr("id") == "main"])
+    raw_ele = div.raw()
+
+    assert isinstance(raw_ele, lxml.etree._Element)
+    assert raw_ele.tag == div.tag
+
+
+def test_xpathelementlist_iter_and_slice(html_doc):
+    root = html(html_doc)
+    items = root.descendants(ele("li"))
+
+    tags = [item.tag for item in items]
+    assert tags == ["li"] * 4
+
+    sliced = items[1:3]
+    assert isinstance(sliced, type(items))
+    assert len(sliced) == 2
+    assert all(item.tag == "li" for item in sliced)
