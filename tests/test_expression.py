@@ -3,7 +3,7 @@ import pytest
 from xpathkit.exceptions import XPathEvaluationError
 from xpathkit.expressions import (
     _any,
-    _any_to_expr,
+    _any_to_expr_in_pred,
     _any_to_xpath_str,
     _index,
     _str,
@@ -54,10 +54,10 @@ def test_any_to_el():
 
 def test_any_to_expr():
     attr_expr = attr("id")
-    assert _any_to_expr(attr_expr) is attr_expr
-    assert isinstance(_any_to_expr(1), _index)
-    assert isinstance(_any_to_expr("raw_string"), _str)
-    assert isinstance(_any_to_expr(True), _any)
+    assert _any_to_expr_in_pred(attr_expr) is attr_expr
+    assert isinstance(_any_to_expr_in_pred(1), _index)
+    assert isinstance(_any_to_expr_in_pred("raw_string"), _str)
+    assert isinstance(_any_to_expr_in_pred(True), _any)
 
 
 class TestAtomNodes:
@@ -282,19 +282,13 @@ class TestIntegration:
 
     def test_complex_path_with_predicates(self):
         # //div[@id="main"]/ul/li[contains(@class, "active")]
-        query = (
-            ele("div")[attr("id") == "main"]
-            / "ul"
-            / ele("li")[attr("class").contains("active")]
-        )
+        query = ele("div")[attr("id") == "main"] / "ul" / ele("li")[attr("class").contains("active")]
         expected = 'div[@id="main"]/ul/li[contains(@class,"active")]'
         assert str(query) == expected
 
     def test_descendant_with_multiple_conditions(self):
         # //a[(contains(@href, "example.com")) and (not(@target))]
-        query = ele("a")[
-            (attr("href").contains("example.com")) & fun("not", attr("target"))
-        ]
+        query = ele("a")[(attr("href").contains("example.com")) & fun("not", attr("target"))]
         expected = 'a[(contains(@href,"example.com") and not(@target))]'
         assert str(query) == expected
 
@@ -319,12 +313,6 @@ class TestIntegration:
 
     def test_complex_class_selection(self):
         # //div[ (contains(@class,"widget") and not(contains(@class,"disabled"))) or @id="fallback" ]
-        query = ele("div")[
-            (
-                attr("class").contains("widget")
-                & fun("not", attr("class").contains("disabled"))
-            )
-            | (attr("id") == "fallback")
-        ]
+        query = ele("div")[(attr("class").contains("widget") & fun("not", attr("class").contains("disabled"))) | (attr("id") == "fallback")]
         expected = 'div[((contains(@class,"widget") and not(contains(@class,"disabled"))) or @id="fallback")]'
         assert str(query) == expected

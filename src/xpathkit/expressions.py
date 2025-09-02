@@ -208,25 +208,19 @@ class _cond(_bool):
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(
-            f"starts-with({self._key},{expr._any_to_str_in_expr(value)})"
-        )
+        return self._add_cond(f"starts-with({self._key},{expr._any_to_str_in_expr(value)})")
 
     def ends_with(
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(
-            f"ends-with({self._key},{expr._any_to_str_in_expr(value)})"
-        )
+        return self._add_cond(f"ends-with({self._key},{expr._any_to_str_in_expr(value)})")
 
     def contains(
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(
-            f"contains({self._key},{expr._any_to_str_in_expr(value)})"
-        )
+        return self._add_cond(f"contains({self._key},{expr._any_to_str_in_expr(value)})")
 
     def all(
         self,
@@ -234,10 +228,7 @@ class _cond(_bool):
     ) -> "_cond":
         return self._add_cond(
             self._and_join(
-                *[
-                    f"contains({self._key},{expr._any_to_str_in_expr(v)})"
-                    for v in values
-                ],
+                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
             ),
         )
 
@@ -247,10 +238,7 @@ class _cond(_bool):
     ) -> "_cond":
         return self._add_cond(
             self._or_join(
-                *[
-                    f"contains({self._key},{expr._any_to_str_in_expr(v)})"
-                    for v in values
-                ],
+                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
             ),
         )
 
@@ -260,10 +248,7 @@ class _cond(_bool):
     ) -> "_cond":
         return self._add_cond(
             self._and_join(
-                *[
-                    f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))"
-                    for v in values
-                ],
+                *[f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))" for v in values],
             ),
         )
 
@@ -395,9 +380,7 @@ class fun(_cond):
         name: str,
         *args: Union["fun", "attr", "dot", Any],
     ):
-        super().__init__(
-            key=f"{name}({','.join(expr._any_to_str_in_expr(arg) for arg in args)})"
-        )
+        super().__init__(key=f"{name}({','.join(expr._any_to_str_in_expr(arg) for arg in args)})")
 
 
 class ele(expr):
@@ -434,7 +417,7 @@ class ele(expr):
         pred: Union[int, str, attr, dot, fun, Any],
     ) -> "ele":
         """Add a predicate to this element node."""
-        return self._add_expr(_any_to_expr(pred))
+        return self._add_expr(_any_to_expr_in_pred(pred))
 
     def __truediv__(
         self,
@@ -490,7 +473,7 @@ class ele(expr):
             raise XPathEvaluationError("Value must be a string or expression")
 
 
-def _any_to_expr(
+def _any_to_expr_in_pred(
     val: Any,
 ) -> expr:
     """Convert any value to a xpath predicate."""
