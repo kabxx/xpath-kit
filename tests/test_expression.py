@@ -14,147 +14,206 @@ from xpathkit.expressions import (
 from xpathkit.exceptions import XPathEvaluationError
 
 
+@pytest.mark.parametrize(
+    "val,expected",
+    [
+        ("hello", "hello"),
+        (123, "123"),
+        (True, "true"),
+        (False, "false"),
+        (None, "None"),
+    ],
+)
+def test_any_to_xpath_str(val, expected):
+    assert _any_to_xpath_str(val) == expected
 
-class TestHelperFunctions:
-    """Tests for internal helper functions that convert types."""
 
-    def test_any_to_xpath_str(self):
-        assert _any_to_xpath_str("hello") == "hello"
-        assert _any_to_xpath_str(123) == "123"
-        assert _any_to_xpath_str(True) == "true"
-        assert _any_to_xpath_str(False) == "false"
-        assert _any_to_xpath_str(None) == "None"
+@pytest.mark.parametrize(
+    "val,expected",
+    [
+        ("hello", '"hello"'),
+        (attr("id"), "@id"),
+        (dot() == "world", '.="world"'),
+        (123, "123"),
+        (True, "true"),
+    ],
+)
+def test_any_to_str_in_expr(val, expected):
+    assert expr._any_to_str_in_expr(val) == expected
 
-    def test_any_to_str_in_expr(self):
-        # Strings should be quoted
-        assert expr._any_to_str_in_expr("hello") == '"hello"'
-        # Expressions should be rendered
-        assert expr._any_to_str_in_expr(attr("id")) == "@id"
-        assert expr._any_to_str_in_expr(dot() == "world") == '.="world"'
-        # Other types should be converted directly
-        assert expr._any_to_str_in_expr(123) == "123"
-        assert expr._any_to_str_in_expr(True) == "true"
 
-    def test_any_to_el(self):
-        div_el = ele("div")
-        assert ele._any_to_expr_in_ele(div_el) is div_el
-        assert isinstance(ele._any_to_expr_in_ele("p"), ele)
-        assert str(ele._any_to_expr_in_ele("p")) == "p"
-        with pytest.raises(XPathEvaluationError):
-            ele._any_to_expr_in_ele(123)
+def test_any_to_el():
+    div_el = ele("div")
+    assert ele._any_to_expr_in_ele(div_el) is div_el
+    assert isinstance(ele._any_to_expr_in_ele("p"), ele)
+    assert str(ele._any_to_expr_in_ele("p")) == "p"
+    with pytest.raises(XPathEvaluationError):
+        ele._any_to_expr_in_ele(123)
 
-    def test_any_to_expr(self):
-        attr_expr = attr("id")
-        assert _any_to_expr(attr_expr) is attr_expr
-        assert isinstance(_any_to_expr(1), _index)
-        assert isinstance(_any_to_expr("raw_string"), _str)
-        assert isinstance(_any_to_expr(True), _any)
+
+def test_any_to_expr():
+    attr_expr = attr("id")
+    assert _any_to_expr(attr_expr) is attr_expr
+    assert isinstance(_any_to_expr(1), _index)
+    assert isinstance(_any_to_expr("raw_string"), _str)
+    assert isinstance(_any_to_expr(True), _any)
 
 
 class TestAtomNodes:
     """Tests for the simplest expression nodes like indices and raw strings."""
 
-    def test_index_node(self):
-        assert str(_index(1)) == "1"
-        assert str(_index(5)) == "5"
-        # Negative indexing
-        assert str(_index(-1)) == "last()"
-        assert str(_index(-2)) == "last()-1"
-        assert str(_index(-10)) == "last()-9"
-        # Zero is invalid in XPath
-        with pytest.raises(XPathEvaluationError):
-            _index(0).part()
 
-    def test_str_node(self):
-        assert str(_str("some_raw_predicate")) == "some_raw_predicate"
-        assert str(_str("@id and not(@class)")) == "@id and not(@class)"
+@pytest.mark.parametrize(
+    "val,expected",
+    [
+        (1, "1"),
+        (5, "5"),
+        (-1, "last()"),
+        (-2, "last()-1"),
+        (-10, "last()-9"),
+    ],
+)
+def test_index_node(val, expected):
+    assert str(_index(val)) == expected
 
-    def test_any_node(self):
-        assert str(_any(True)) == "true"
-        assert str(_any(123)) == "123"
+
+def test_index_zero_raises():
+    with pytest.raises(XPathEvaluationError):
+        _index(0).part()
+
+
+@pytest.mark.parametrize(
+    "val,expected",
+    [
+        ("some_raw_predicate", "some_raw_predicate"),
+        ("@id and not(@class)", "@id and not(@class)"),
+    ],
+)
+def test_str_node(val, expected):
+    assert str(_str(val)) == expected
+
+
+@pytest.mark.parametrize(
+    "val,expected",
+    [
+        (True, "true"),
+        (123, "123"),
+    ],
+)
+def test_any_node(val, expected):
+    assert str(_any(val)) == expected
 
 
 class TestConditionNodes:
     """Tests for predicates: attr, text, func, and their boolean logic."""
 
-    def test_attr_existence(self):
-        assert str(attr("disabled")) == "@disabled"
-        assert str(attr("data-custom")) == "@data-custom"
 
-    def test_attr_comparisons(self):
-        assert str(attr("id") == "main") == '@id="main"'
-        assert str(attr("id") != "main") == '@id!="main"'
-        assert str(attr("count") > 10) == "@count>10"
-        assert str(attr("count") < 10) == "@count<10"
-        assert str(attr("count") >= 10) == "@count>=10"
-        assert str(attr("count") <= 10) == "@count<=10"
+@pytest.mark.parametrize(
+    "name,expected",
+    [
+        ("disabled", "@disabled"),
+        ("data-custom", "@data-custom"),
+    ],
+)
+def test_attr_existence(name, expected):
+    assert str(attr(name)) == expected
 
-    def test_attr_string_methods(self):
-        assert str(attr("class").contains("item")) == 'contains(@class,"item")'
-        assert str(attr("href").starts_with("https://")) == 'starts-with(@href,"https://")'
-        assert str(attr("src").ends_with(".png")) == 'ends-with(@src,".png")'
 
-    def test_attr_multi_value_methods(self):
-        # all() -> AND logic
-        expr_all = attr("class").all("item", "active")
-        assert str(expr_all) == '(contains(@class,"item") and contains(@class,"active"))'
-        # any() -> OR logic
-        expr_any = attr("class").any("item", "active")
-        assert str(expr_any) == '(contains(@class,"item") or contains(@class,"active"))'
-        # none() -> NOT AND logic
-        expr_none = attr("class").none("disabled", "hidden")
-        assert str(expr_none) == '(not(contains(@class,"disabled")) and not(contains(@class,"hidden")))'
+@pytest.mark.parametrize(
+    "expr,expected",
+    [
+        (attr("id") == "main", '@id="main"'),
+        (attr("id") != "main", '@id!="main"'),
+        (attr("count") > 10, "@count>10"),
+        (attr("count") < 10, "@count<10"),
+        (attr("count") >= 10, "@count>=10"),
+        (attr("count") <= 10, "@count<=10"),
+    ],
+)
+def test_attr_comparisons(expr, expected):
+    assert str(expr) == expected
 
-    def test_attr_chaining_on_same_instance(self):
-        # Chaining multiple conditions on the same attribute implies AND
-        expr = attr("price").gt(100).lt(200)
-        assert str(expr) == "(@price>100 and @price<200)"
 
-    def test_boolean_logic_and_or(self):
-        expr_and = (attr("id") == "a") & (attr("class") == "b")
-        assert str(expr_and) == '(@id="a" and @class="b")'
-        expr_or = (attr("id") == "a") | (attr("class") == "b")
-        assert str(expr_or) == '(@id="a" or @class="b")'
+@pytest.mark.parametrize(
+    "expr,expected",
+    [
+        (attr("class").contains("item"), 'contains(@class,"item")'),
+        (attr("href").starts_with("https://"), 'starts-with(@href,"https://")'),
+        (attr("src").ends_with(".png"), 'ends-with(@src,".png")'),
+    ],
+)
+def test_attr_string_methods(expr, expected):
+    assert str(expr) == expected
 
-    def test_boolean_logic_chaining_and_precedence(self):
-        # Your implementation correctly groups expressions left-to-right
-        expr1 = (attr("a") == 1) & (attr("b") == 2) | (attr("c") == 3)
-        assert str(expr1) == "((@a=1 and @b=2) or @c=3)"
 
-        expr2 = (attr("a") == 1) | (attr("b") == 2) & (attr("c") == 3)
-        assert str(expr2) == "(@a=1 or (@b=2 and @c=3))"
+@pytest.mark.parametrize(
+    "expr,expected",
+    [
+        (attr("class").all("item", "active"), '(contains(@class,"item") and contains(@class,"active"))'),
+        (attr("class").any("item", "active"), '(contains(@class,"item") or contains(@class,"active"))'),
+        (attr("class").none("disabled", "hidden"), '(not(contains(@class,"disabled")) and not(contains(@class,"hidden")))'),
+    ],
+)
+def test_attr_multi_value_methods(expr, expected):
+    assert str(expr) == expected
 
-        # Explicit grouping with parentheses
-        expr3 = (attr("a") == 1) & ((attr("b") == 2) | (attr("c") == 3))
-        assert str(expr3) == "(@a=1 and (@b=2 or @c=3))"
 
-    def test_text_node(self):
-        assert str(dot()) == "."
-        assert str(dot() == "Hello World") == '.="Hello World"'
-        assert str(dot().contains("World")) == 'contains(.,"World")'
+def test_attr_chaining_on_same_instance():
+    expr = attr("price").gt(100).lt(200)
+    assert str(expr) == "(@price>100 and @price<200)"
 
-    def test_func_node(self):
-        assert str(fun("last")) == "last()"
-        assert str(fun("position")) == "position()"
-        assert str(fun("count", attr("id"))) == "count(@id)"
-        assert str(fun("contains", dot(), "some_text")) == 'contains(.,"some_text")'
-        assert str(fun("not", attr("disabled"))) == "not(@disabled)"
-        # Nested function
-        assert str(fun("not", fun("contains", dot(), "hide"))) == 'not(contains(.,"hide"))'
 
-    def test_attr_logical_combiners_and_or(self):
-        # Test case for or_
-        expr_or = attr("class").contains("a").or_(lambda c: c.contains("b"))
-        assert str(expr_or) == '(contains(@class,"a") or contains(@class,"b"))'
+@pytest.mark.parametrize(
+    "expr,expected",
+    [
+        ((attr("id") == "a") & (attr("class") == "b"), '(@id="a" and @class="b")'),
+        ((attr("id") == "a") | (attr("class") == "b"), '(@id="a" or @class="b")'),
+    ],
+)
+def test_boolean_logic_and_or(expr, expected):
+    assert str(expr) == expected
 
-        # Test case for and_
-        expr_and = attr("class").starts_with("a").and_(lambda c: c.ends_with("z"))
-        assert str(expr_and) == '(starts-with(@class,"a") and ends-with(@class,"z"))'
 
-    def test_func_with_various_argument_types(self):
-        assert str(fun("round", 1.5)) == "round(1.5)"
-        assert str(fun("concat", "User: ", attr("name"))) == 'concat("User: ",@name)'
-        assert str(fun("starts-with", dot(), True)) == "starts-with(.,true)"
+def test_boolean_logic_chaining_and_precedence():
+
+    expr1 = (attr("a") == 1) & (attr("b") == 2) | (attr("c") == 3)
+    assert str(expr1) == "((@a=1 and @b=2) or @c=3)"
+    expr2 = (attr("a") == 1) | (attr("b") == 2) & (attr("c") == 3)
+    assert str(expr2) == "(@a=1 or (@b=2 and @c=3))"
+    expr3 = (attr("a") == 1) & ((attr("b") == 2) | (attr("c") == 3))
+    assert str(expr3) == "(@a=1 and (@b=2 or @c=3))"
+
+
+def test_text_node():
+    assert str(dot()) == "."
+    assert str(dot() == "Hello World") == '.="Hello World"'
+    assert str(dot().contains("World")) == 'contains(.,"World")'
+
+
+def test_func_node():
+    assert str(fun("last")) == "last()"
+    assert str(fun("position")) == "position()"
+    assert str(fun("count", attr("id"))) == "count(@id)"
+    assert str(fun("contains", dot(), "some_text")) == 'contains(.,"some_text")'
+    assert str(fun("not", attr("disabled"))) == "not(@disabled)"
+    # Nested function
+    assert str(fun("not", fun("contains", dot(), "hide"))) == 'not(contains(.,"hide"))'
+
+
+def test_attr_logical_combiners_and_or():
+    # Test case for or_
+    expr_or = attr("class").contains("a").or_(lambda c: c.contains("b"))
+    assert str(expr_or) == '(contains(@class,"a") or contains(@class,"b"))'
+
+    # Test case for and_
+    expr_and = attr("class").starts_with("a").and_(lambda c: c.ends_with("z"))
+    assert str(expr_and) == '(starts-with(@class,"a") and ends-with(@class,"z"))'
+
+
+def test_func_with_various_argument_types():
+    assert str(fun("round", 1.5)) == "round(1.5)"
+    assert str(fun("concat", "User: ", attr("name"))) == 'concat("User: ",@name)'
+    assert str(fun("starts-with", dot(), True)) == "starts-with(.,true)"
 
 
 class TestElementNode:

@@ -48,109 +48,65 @@ def html_doc():
     """
 
 
-class TestExpressionBuilding:
-    """Test if the XPath expression builder generates correct strings"""
-
-    def test_simple_element(self):
-        assert str(ele("div")) == "div"
-
-    def test_child_selector(self):
-        assert str(ele("div") / "p") == "div/p"
-        assert str(ele("div") / ele("p")) == "div/p"
-        assert str(ele("div") / "p" / "a") == "div/p/a"
-
-    def test_descendant_selector(self):
-        assert str(ele("body") // "a") == "body//a"
-        assert str(ele("body") // ele("a")) == "body//a"
-
-    def test_attribute_equals(self):
-        assert str(ele("div")[attr("id") == "main"]) == 'div[@id="main"]'
-
-    def test_attribute_any(self):
-        query = ele("li")[attr("class").any("item", "special")]
-        expected = 'li[(contains(@class,"item") or contains(@class,"special"))]'
-        assert str(query) == expected
-
-    def test_attribute_all(self):
-        query = ele("div")[attr("class").all("container", "main-content")]
-        expected = 'div[(contains(@class,"container") and contains(@class,"main-content"))]'
-        assert str(query) == expected
-
-    def test_attribute_none(self):
-        query = ele("li")[attr("class").none("disabled", "hidden")]
-        expected = 'li[(not(contains(@class,"disabled")) and not(contains(@class,"hidden")))]'
-        assert str(query) == expected
-
-    def test_attribute_exists(self):
-        assert str(ele("a")[attr("href")]) == "a[@href]"
-
-    def test_logical_and_or(self):
-        query_and = ele("a")[(attr("class") == "link") & (attr("href") == "/link1")]
-        assert str(query_and) == 'a[(@class="link" and @href="/link1")]'
-
-        query_or = ele("div")[(attr("id") == "main") | (attr("id") == "footer")]
-        assert str(query_or) == 'div[(@id="main" or @id="footer")]'
-
-    def test_positional_predicate(self):
-        assert str(ele("li")[1]) == "li[1]"
-        assert str(ele("ul") / ele("li")[2]) == "ul/li[2]"
-
-        assert str(ele("li")[-1]) == "li[last()]"
-        assert str(ele("li")[-2]) == "li[last()-1]"
-
-    def test_function_and_text_expressions(self):
-        query_text = E.p[dot() == "Welcome"]
-        assert str(query_text) == 'p[.="Welcome"]'
-
-        query_contains = E.p[F.contains(dot(), "Footer")]
-        assert str(query_contains) == 'p[contains(.,"Footer")]'
-        query_strlen = E.li[F.string_length(dot()) > 5]
-        assert str(query_strlen) == "li[string-length(.)>5]"
-
-        query_nested = E.li[F.not_(F.contains(A.class_, "disabled"))]
-        assert str(query_nested) == 'li[not(contains(@class,"disabled"))]'
-
-    def test_multiple_predicates(self):
-        query = ele("li")[attr("class").any("item")][1]
-        assert str(query) == 'li[(contains(@class,"item"))][1]'
-
-    def test_complex_expression(self):
-        query = ele("div")[attr("id") == "main"] // ele("li")[attr("class").all("item", "special")] / "span"
-        expected = 'div[@id="main"]//li[(contains(@class,"item") and contains(@class,"special"))]/span'
-        assert str(query) == expected
+@pytest.mark.parametrize(
+    "expr,expected",
+    [
+        (ele("div"), "div"),
+        (ele("div") / "p", "div/p"),
+        (ele("div") / ele("p"), "div/p"),
+        (ele("div") / "p" / "a", "div/p/a"),
+        (ele("body") // "a", "body//a"),
+        (ele("body") // ele("a"), "body//a"),
+        (ele("div")[attr("id") == "main"], 'div[@id="main"]'),
+        (ele("li")[attr("class").any("item", "special")], 'li[(contains(@class,"item") or contains(@class,"special"))]'),
+        (ele("div")[attr("class").all("container", "main-content")], 'div[(contains(@class,"container") and contains(@class,"main-content"))]'),
+        (ele("li")[attr("class").none("disabled", "hidden")], 'li[(not(contains(@class,"disabled")) and not(contains(@class,"hidden")))]'),
+        (ele("a")[attr("href")], "a[@href]"),
+        (ele("a")[(attr("class") == "link") & (attr("href") == "/link1")], 'a[(@class="link" and @href="/link1")]'),
+        (ele("div")[(attr("id") == "main") | (attr("id") == "footer")], 'div[(@id="main" or @id="footer")]'),
+        (ele("li")[1], "li[1]"),
+        (ele("ul") / ele("li")[2], "ul/li[2]"),
+        (ele("li")[-1], "li[last()]"),
+        (ele("li")[-2], "li[last()-1]"),
+        (E.p[dot() == "Welcome"], 'p[.="Welcome"]'),
+        (E.p[F.contains(dot(), "Footer")], 'p[contains(.,"Footer")]'),
+        (E.li[F.string_length(dot()) > 5], "li[string-length(.)>5]"),
+        (E.li[F.not_(F.contains(A.class_, "disabled"))], 'li[not(contains(@class,"disabled"))]'),
+        (ele("li")[attr("class").any("item")][1], 'li[(contains(@class,"item"))][1]'),
+        (ele("div")[attr("id") == "main"] // ele("li")[attr("class").all("item", "special")] / "span", 'div[@id="main"]//li[(contains(@class,"item") and contains(@class,"special"))]/span'),
+    ],
+)
+def test_xpath_expression_building(expr, expected):
+    assert str(expr) == expected
 
 
-class TestBuilders:
-    def test_custom_tag_and_attr(self):
-        elmt = html('<root><foo data-x="1"/></root>').descendant(E("foo")[A("data-x") == "1"])
-        assert elmt.tag == "foo"
+@pytest.mark.parametrize(
+    "expr,expected",
+    [
+        (E.div, "div"),
+        (E.span, "span"),
+        (E.a[A.href == "/home"], 'a[@href="/home"]'),
+        (E.ul / E.li[A.class_.any("item", "active")], 'ul/li[(contains(@class,"item") or contains(@class,"active"))]'),
+        (E("custom")[A("data-id") == "123"], 'custom[@data-id="123"]'),
+        (A.id == "main", '@id="main"'),
+        (A.class_.any("item", "active"), '(contains(@class,"item") or contains(@class,"active"))'),
+        (A("data-role") == "button", '@data-role="button"'),
+        (A.class_, "@class"),
+        (A.for_, "@for"),
+        (F.last(), "last()"),
+        (F.position(), "position()"),
+        (F.contains(A.class_, "active"), 'contains(@class,"active")'),
+        (F.normalize_space(dot()) == "Item 1", 'normalize-space(.)="Item 1"'),
+        (F.not_(A.disabled), "not(@disabled)"),
+    ],
+)
+def test_xpath_builders(expr, expected):
+    assert str(expr) == expected
 
-    def test_element_builder_e(self):
-        assert str(E.div) == "div"
-        assert str(E.span) == "span"
-        assert str(E.a[A.href == "/home"]) == 'a[@href="/home"]'
-        assert str(E.ul / E.li[A.class_.any("item", "active")]) == 'ul/li[(contains(@class,"item") or contains(@class,"active"))]'
-        assert str(E("custom")[A("data-id") == "123"]) == 'custom[@data-id="123"]'
 
-    def test_attribute_builder_a(self):
-        assert str(A.id == "main") == '@id="main"'
-        assert str(A.class_.any("item", "active")) == '(contains(@class,"item") or contains(@class,"active"))'
-        assert str(A("data-role") == "button") == '@data-role="button"'
-        assert str(A.class_) == "@class"
-        assert str(A.for_) == "@for"
-
-    def test_function_builder_f(self):
-        assert str(F.last()) == "last()"
-        assert str(F.position()) == "position()"
-
-        query_a = F.contains(A.class_, "active")
-        assert str(query_a) == 'contains(@class,"active")'
-
-        query_text = F.normalize_space(dot()) == "Item 1"
-        assert str(query_text) == 'normalize-space(.)="Item 1"'
-
-        query_not = F.not_(A.disabled)
-        assert str(query_not) == "not(@disabled)"
+def test_custom_tag_and_attr():
+    elmt = html('<root><foo data-x="1"/></root>').descendant(E("foo")[A("data-x") == "1"])
+    assert elmt.tag == "foo"
 
 
 class TestElementQueries:
@@ -436,23 +392,43 @@ class TestDOMManipulation:
         assert div.children("p").empty()
 
 
-class TestFunctionBuilder:
-    def test_func_no_args(self):
-        f = fun("last")
-        assert str(f) == "last()"
+@pytest.mark.parametrize(
+    "expr,expected",
+    [
+        (fun("last"), "last()"),
+        (fun("count", A.id), "count(@id)"),
+        (fun("contains", dot(), "foo"), 'contains(.,"foo")'),
+        (fun("normalize-space", dot()), "normalize-space(.)"),
+        (fun("string-length", fun("normalize-space", dot())), "string-length(normalize-space(.))"),
+    ],
+)
+def test_fun_builder(expr, expected):
+    assert str(expr) == expected
 
-    def test_func_with_attr(self):
-        f = fun("count", A.id)
-        assert str(f) == "count(@id)"
 
-    def test_func_with_text(self):
-        f = fun("contains", dot(), "foo")
-        assert str(f) == 'contains(.,"foo")'
+def test_xpathelement_xpath_return_types(html_doc):
+    root = html(html_doc)
 
-    def test_func_with_dot(self):
-        f = fun("normalize-space", dot())
-        assert str(f) == "normalize-space(.)"
+    title = root.xpath("string(//title)")
+    assert isinstance(title, str)
+    assert "Test Page" in title
 
-    def test_func_nested(self):
-        f = fun("string-length", fun("normalize-space", dot()))
-        assert str(f) == "string-length(normalize-space(.))"
+    count = root.xpath("count(//li)")
+    assert isinstance(count, float)
+    assert count == 4.0
+
+    has_h1 = root.xpath("boolean(//h1)")
+    assert isinstance(has_h1, bool)
+    assert has_h1 is True
+
+    li_list = root.xpath("//li")
+    from xpathkit.xpathkit import XPathElementList
+
+    assert isinstance(li_list, XPathElementList)
+    assert len(li_list) == 4
+    assert all(l.tag == "li" for l in li_list)
+
+    class_list = root.xpath("//li/@class")
+    assert isinstance(class_list, list)
+    assert all(isinstance(c, str) for c in class_list)
+    assert "item active" in class_list
