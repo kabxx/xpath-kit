@@ -86,39 +86,45 @@ class XPathElement:
     def children(
         self,
         element: Union[str, ele],
-    ) -> "XPathElementList":
+    ) -> Union["XPathElementList", str, float, bool, List[str]]:
         """Return all direct child elements matching the given tag/expression."""
         if isinstance(element, str):
             element = ele(element)
-        return XPathElementList(self._ele.xpath(f"./{element}"))
+        return self.xpath(f"./{element}")
 
     def child(
         self,
         element: Union[str, ele],
     ) -> "XPathElement":
         """Return the first direct child element matching the given tag/expression."""
-        return self.children(element).one()
+        children = self.children(element)
+        if not isinstance(children, XPathElementList):
+            raise XPathSelectionError("The xpath expression did not return any elements")
+        return children.one()
 
     def descendants(
         self,
         element: Union[str, ele],
-    ) -> "XPathElementList":
+    ) -> Union["XPathElementList", str, float, bool, List[str]]:
         """Return all descendant elements matching the given tag/expression."""
         if isinstance(element, str):
             element = ele(element)
-        return XPathElementList(self._ele.xpath(f".//{element}"))
+        return self.xpath(f".//{element}")
 
     def descendant(
         self,
         element: Union[str, ele],
     ) -> "XPathElement":
         """Return the first descendant element matching the given tag/expression."""
-        return self.descendants(element).one()
+        descendants = self.descendants(element)
+        if not isinstance(descendants, XPathElementList):
+            raise XPathSelectionError("The xpath expression did not return any elements")
+        return descendants.one()
 
     def xpath(
         self,
         val: Union[expr, str],
-    ) -> Union[str, float, bool, "XPathElementList", List[str]]:
+    ) -> Union["XPathElementList", str, float, bool, List[str]]:
         """Run an arbitrary XPath query and return the results as XPathElementList."""
         res = self._ele.xpath(str(val))
         if isinstance(res, bool):
@@ -187,9 +193,7 @@ class XPathElement:
         try:
             self._ele.remove(child._ele)
         except ValueError as e:
-            raise XPathModificationError(
-                "Element is not a child of this element"
-            ) from e
+            raise XPathModificationError("Element is not a child of this element") from e
 
     def clear(
         self,
@@ -260,9 +264,7 @@ class XPathElementList:
         if self.empty():
             raise XPathSelectionError("No elements in group")
         if self.len() != 1:
-            raise XPathSelectionError(
-                "Element list does not contain exactly one element"
-            )
+            raise XPathSelectionError("Element list does not contain exactly one element")
         return self._eles[0]
 
     def first(
@@ -287,9 +289,7 @@ class XPathElementList:
         if isinstance(key, int):
             return self._eles[key]
         elif isinstance(key, slice):
-            return XPathElementList(
-                [e.raw() for e in self._eles[key.start : key.stop : key.step]]
-            )
+            return XPathElementList([e.raw() for e in self._eles[key.start : key.stop : key.step]])
         else:
             raise TypeError
 
