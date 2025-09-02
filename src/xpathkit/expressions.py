@@ -1,17 +1,14 @@
 from typing import Any, Callable, List, Optional, Tuple, Union, override
 
 from .exceptions import XPathEvaluationError
-from .utils import xpath_str
 
 
-class _node:
+class expr:
     """Abstract base node for XPath expression building."""
 
-    def __str__(
-        self,
-    ):
+    def __str__(self):
         """Return the full XPath string representation of the node."""
-        raise NotImplementedError
+        return self.full()
 
     def part(
         self,
@@ -25,206 +22,235 @@ class _node:
         """Return the full XPath string for this node."""
         raise NotImplementedError
 
-    def __str__(self):
-        """Return the full XPath string representation of the node."""
-        return self.full()
+    @staticmethod
+    def _any_to_str_in_expr(
+        val: Any,
+    ) -> str:
+        if isinstance(val, str):
+            return f'"{val}"'
+        elif isinstance(val, expr):
+            return val.full()
+        else:
+            return _any_to_xpath_str(val)
 
 
-class _pred(_node):
+class _atom(expr):
+
+    def part(
+        self,
+    ) -> str:
+        raise NotImplementedError
+
+    def full(
+        self,
+    ) -> str:
+        return self.part()
+
+
+class _any(_atom):
+
+    def __init__(
+        self,
+        value: Any,
+    ):
+        self._value = value
+        super().__init__()
+
+    @override
+    def part(
+        self,
+    ) -> str:
+        return _any_to_xpath_str(self._value)
+
+
+class _str(_atom):
+
+    def __init__(
+        self,
+        value: str,
+    ):
+        self._value = value
+        super().__init__()
+
+    @override
+    def part(
+        self,
+    ) -> str:
+        return self._value
+
+
+class _index(_atom):
+
+    def __init__(
+        self,
+        value: int,
+    ):
+        self._value = value
+        super().__init__()
+
+    @override
+    def part(
+        self,
+    ) -> str:
+        if self._value < 0:
+            offset = abs(self._value) - 1
+            return f"last()-{offset}" if offset > 0 else "last()"
+        elif self._value == 0:
+            raise XPathEvaluationError("Zero is not a valid XPath index")
+        else:
+            return str(self._value)
+
+
+class _bool(expr):
     """Predicate node for XPath expression building."""
 
     def __init__(
         self,
     ):
         """Initialize a predicate node for XPath expression building."""
-        self._others: List[Tuple[str, _pred]] = []
+        self._others: List[Tuple[str, _bool]] = []
 
-    def __and__(
+    def _add_other(
         self,
-        value: "_pred",
-    ) -> "attr":
-        """Combine this predicate with another using logical AND."""
+        conn: str,
+        other: "_bool",
+    ) -> "_bool":
         self._others.append(
             (
-                "and",
-                value,
+                conn,
+                other,
             ),
         )
         return self
 
+    def __and__(
+        self,
+        other: "_bool",
+    ) -> "_bool":
+        return self._add_other("and", other)
+
     def __or__(
         self,
-        value: "_pred",
-    ) -> "attr":
-        """Combine this predicate with another using logical OR."""
-        self._others.append(
-            (
-                "or",
-                value,
-            )
-        )
-        return self
+        other: "_bool",
+    ) -> "_bool":
+        return self._add_other("or", other)
 
     @override
     def full(
         self,
     ) -> str:
-        """Return the full predicate string, including all combined predicates."""
         ret = self.part()
-        for conn, pred in self._others:
-            ret = f"({ret} {conn} {pred.full()})"
-        return ret
-
-    @staticmethod
-    def _and_join(
-        *ss: str,
-    ) -> str:
-        """Join multiple strings with 'and' for XPath expressions."""
-        ss = [s for s in ss if s is not None]
-        s = " and ".join(ss)
-        return f"({s})"
-
-    @staticmethod
-    def _or_join(
-        *ss: str,
-    ) -> str:
-        """Join multiple strings with 'or' for XPath expressions."""
-        ss = [s for s in ss if s is not None]
-        s = " or ".join(ss)
-        return f"({s})"
-
-
-class expr(_pred):
-    """Expression node for XPath building (supports ==, !=, >, <, etc)."""
-
-    def __init__(
-        self,
-        base: Any,
-    ):
-        """Initialize an expression node for XPath building."""
-        super().__init__()
-        self._exprs = []
-        self._add(None, base)
-
-    def _add(
-        self,
-        op: str,
-        value: Any,
-    ) -> "expr":
-        """Add an operation and value to the expression chain."""
-        self._exprs.append((op, xpath_str(value)))
-        return self
-
-    def __eq__(
-        self,
-        value: Any,
-    ) -> "expr":
-        return self._add("=", value)
-
-    def __ne__(
-        self,
-        value: Any,
-    ) -> "expr":
-        return self._add("!=", value)
-
-    def __gt__(
-        self,
-        value: Any,
-    ) -> "expr":
-        return self._add(">", value)
-
-    def __lt__(
-        self,
-        value: Any,
-    ) -> "expr":
-        return self._add("<", value)
-
-    def __ge__(
-        self,
-        value: Any,
-    ) -> "expr":
-        return self._add(">=", value)
-
-    def __le__(
-        self,
-        value: Any,
-    ) -> "expr":
-        return self._add(">=", value)
-
-    def __le__(
-        self,
-        value: Any,
-    ) -> "expr":
-        return self._add("<=", value)
-
-    @override
-    def part(
-        self,
-    ) -> str:
-        ret = ""
-        for conn, expr in self._exprs:
-            if ret:
-                ret = f"({ret}{conn}{expr})"
-            else:
-                ret = expr
+        for conn, other in self._others:
+            ret = f"({ret} {conn} {other.full()})"
         return ret
 
 
-class value(_pred):
-    """Value node for XPath building."""
+class _cond(_bool):
 
     def __init__(
         self,
-        value: Any,
+        key: str,
     ):
-        """Initialize a value node for XPath building."""
-        super().__init__()
-        self._value = value
-
-    @override
-    def part(
-        self,
-    ) -> str:
-        return xpath_str(self._value)
-
-
-class attr(_pred):
-    """Attribute predicate node for XPath building."""
-
-    def __init__(
-        self,
-        name: str,
-    ):
-        """Initialize an attribute predicate node for XPath building."""
-        super().__init__()
-        self._name = name
+        self._key = key
         self._conds: List[Tuple[str, str]] = []
+        super().__init__()
+
+    @property
+    def key(
+        self,
+    ) -> str:
+        return self._key
+
+    def _add_cond(
+        self,
+        cond: str,
+    ) -> "_cond":
+        self._conds.append(cond)
+        return self
 
     def eq(
         self,
         value: Any,
-    ) -> "attr":
-        """Add an equality condition for the attribute."""
-        self._conds.append(
-            (
-                "and",
-                f'@{self._name}="{xpath_str(value)}"',
-            )
-        )
-        return self
+    ) -> "_cond":
+        return self._add_cond(f"{self._key}={expr._any_to_str_in_expr(value)}")
 
-    def neq(
+    def ne(
         self,
         value: Any,
-    ) -> "attr":
-        """Add an inequality condition for the attribute."""
-        self._conds.append(
-            (
-                "and",
-                f'@{self._name}!="{xpath_str(value)}"',
-            )
+    ) -> "_cond":
+        return self._add_cond(f"{self._key}!={expr._any_to_str_in_expr(value)}")
+
+    def gt(
+        self,
+        value: Any,
+    ) -> "_cond":
+        return self._add_cond(f"{self._key}>{expr._any_to_str_in_expr(value)}")
+
+    def lt(
+        self,
+        value: Any,
+    ) -> "_cond":
+        return self._add_cond(f"{self._key}<{expr._any_to_str_in_expr(value)}")
+
+    def ge(
+        self,
+        value: Any,
+    ) -> "_cond":
+        return self._add_cond(f"{self._key}>={expr._any_to_str_in_expr(value)}")
+
+    def le(
+        self,
+        value: Any,
+    ) -> "_cond":
+        return self._add_cond(f"{self._key}<={expr._any_to_str_in_expr(value)}")
+
+    def starts_with(
+        self,
+        value: Any,
+    ) -> "_cond":
+        return self._add_cond(f"starts-with({self._key},{expr._any_to_str_in_expr(value)})")
+
+    def ends_with(
+        self,
+        value: Any,
+    ) -> "_cond":
+        return self._add_cond(f"ends-with({self._key},{expr._any_to_str_in_expr(value)})")
+
+    def contains(
+        self,
+        value: Any,
+    ) -> "_cond":
+        return self._add_cond(f"contains({self._key},{expr._any_to_str_in_expr(value)})")
+
+    def all(
+        self,
+        *values: Any,
+    ) -> "_cond":
+        return self._add_cond(
+            self._and_join(
+                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
+            ),
         )
-        return self
+
+    def any(
+        self,
+        *values: Any,
+    ) -> "_cond":
+        return self._add_cond(
+            self._or_join(
+                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
+            ),
+        )
+
+    def none(
+        self,
+        *values: Any,
+    ) -> "_cond":
+        return self._add_cond(
+            self._and_join(
+                *[f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))" for v in values],
+            ),
+        )
 
     def __eq__(
         self,
@@ -236,83 +262,128 @@ class attr(_pred):
         self,
         value: Any,
     ):
-        return self.neq(value)
+        return self.ne(value)
 
-    def all(
+    def __gt__(
         self,
-        *values: Any,
+        value: Any,
     ) -> "attr":
-        """Add a condition that all values must be contained in the attribute."""
-        self._conds.append(
-            (
-                "and",
-                self._and_join(
-                    *[f'contains(@{self._name},"{xpath_str(v)}")' for v in values],
-                ),
-            )
-        )
-        return self
+        return self.gt(value)
 
-    def any(
+    def __lt__(
         self,
-        *values: Any,
+        value: Any,
     ) -> "attr":
-        """Add a condition that any value must be contained in the attribute."""
-        self._conds.append(
-            (
-                "and",
-                self._or_join(
-                    *[f'contains(@{self._name},"{xpath_str(v)}")' for v in values],
-                ),
-            )
-        )
-        return self
+        return self.lt(value)
 
-    def none(
+    def __ge__(
         self,
-        *values: Any,
+        value: Any,
     ) -> "attr":
-        """Add a condition that none of the values are contained in the attribute."""
-        self._conds.append(
-            (
-                "and",
-                self._and_join(
-                    *[f'not(contains(@{self._name},"{xpath_str(v)}"))' for v in values],
-                ),
-            )
-        )
-        return self
+        return self.ge(value)
 
-    def or_(
+    def __le__(
         self,
-        expr: Callable[["attr"], "attr"],
+        value: Any,
     ) -> "attr":
-        """Combine this attribute predicate with another using logical OR."""
-        return self | expr(attr(self._name))
-
-    def and_(
-        self,
-        expr: Callable[["attr"], "attr"],
-    ) -> "attr":
-        """Combine this attribute predicate with another using logical AND."""
-        return self & expr(attr(self._name))
+        return self.le(value)
 
     @override
     def part(
         self,
     ) -> str:
         if not self._conds:
-            return f"@{self._name}"
+            return f"{self._key}"
         ret = ""
-        for conn, val in self._conds:
+        for cond in self._conds:
             if not ret:
-                ret = val
+                ret = cond
             else:
-                ret = f"({ret} {conn} {val})"
+                ret = f"({ret} and {cond})"
         return ret
 
+    @override
+    def full(
+        self,
+    ) -> str:
+        """Return the full predicate string, including all combined predicates."""
+        ret = self.part()
+        for conn, other in self._others:
+            ret = f"({ret} {conn} {other.full()})"
+        return ret
 
-class el(_node):
+    @staticmethod
+    def _any_to_str(
+        arg: Union["_cond", Any],
+    ) -> str:
+        if isinstance(arg, str):
+            return f'"{arg}"'
+        elif isinstance(arg, _cond):
+            return arg.full()
+        else:
+            return _any_to_xpath_str(arg)
+
+    @staticmethod
+    def _and_join(
+        *ss: str,
+    ) -> str:
+        ss = [s for s in ss if s is not None]
+        s = " and ".join(ss)
+        return f"({s})"
+
+    @staticmethod
+    def _or_join(
+        *ss: str,
+    ) -> str:
+        ss = [s for s in ss if s is not None]
+        s = " or ".join(ss)
+        return f"({s})"
+
+
+class attr(_cond):
+    """Attribute predicate node for XPath building."""
+
+    def __init__(
+        self,
+        name: str,
+    ):
+        """Initialize an attribute predicate node for XPath building."""
+        self._name = name
+        super().__init__(key=f"@{self._name}")
+
+    def or_(
+        self,
+        fun: Callable[["attr"], "attr"],
+    ) -> "attr":
+        """Combine this attribute predicate with same name attribute using logical OR."""
+        return self | fun(attr(name=self._name))
+
+    def and_(
+        self,
+        fun: Callable[["attr"], "attr"],
+    ) -> "attr":
+        """Combine this attribute predicate with same name attribute using logical AND."""
+        return self & fun(attr(name=self._name))
+
+
+class dot(_cond):
+    def __init__(
+        self,
+    ):
+        """Initialize an attribute predicate node for XPath building."""
+        super().__init__(key=f".")
+
+
+class fun(_cond):
+    def __init__(
+        self,
+        name: str,
+        *args: Union["fun", "attr", "dot", Any],
+    ):
+        super().__init__(key=f"{name}({','.join(expr._any_to_str_in_expr(arg) for arg in args)})")
+
+
+class ele(expr):
     """Element node for XPath building."""
 
     def __init__(
@@ -323,71 +394,50 @@ class el(_node):
         """Initialize an element node for XPath building."""
         self._name = name
         self._axis = axis
-        self._preds: List[_pred] = []
-        self._others: List[Tuple[str, _node]] = []
+        self._exprs: List[expr] = []
+        self._others: List[Tuple[str, "ele"]] = []
+
+    def _add_expr(
+        self,
+        expr: expr,
+    ) -> "ele":
+        self._exprs.append(expr)
+        return self
+
+    def _add_other(
+        self,
+        conn: str,
+        other: "ele",
+    ) -> "ele":
+        self._others.append((conn, other))
+        return self
 
     def __getitem__(
         self,
-        pred: Union["attr", "value", "expr", Any],
-    ) -> "el":
+        pred: Union[int, str, attr, dot, fun, Any],
+    ) -> "ele":
         """Add a predicate to this element node."""
-
-        def _to_pred(
-            val: Any,
-        ) -> _pred:
-            """Convert any value to a predicate."""
-            if isinstance(val, _pred):
-                return val
-            if isinstance(val, int):
-                if val < 0:
-                    offset = abs(val) - 1
-                    return value(f"last()-{offset}" if offset > 0 else "last()")
-                elif val == 0:
-                    raise XPathEvaluationError("Zero is not a valid XPath index")
-                else:
-                    return value(val)
-            return value(val)
-
-        self._preds.append(_to_pred(pred))
-        return self
+        return self._add_expr(_any_to_expr(pred))
 
     def __truediv__(
         self,
-        value: Union[str, "el"],
-    ) -> "el":
+        other: Union[str, "ele"],
+    ) -> "ele":
         """Add a direct child element to this element node."""
-        if isinstance(value, str):
-            value = el(value)
-        elif isinstance(value, el):
-            value = value
-        else:
-            raise XPathEvaluationError("connected value must be a element or string")
-        self._others.append(
-            (
-                "/",
-                value,
-            )
+        return self._add_other(
+            conn="/",
+            other=ele._any_to_expr_in_ele(other),
         )
-        return self
 
     def __floordiv__(
         self,
-        value: Union[str, "el"],
-    ) -> "el":
+        other: Union[str, "ele"],
+    ) -> "ele":
         """Add a descendant element to this element node."""
-        if isinstance(value, str):
-            value = el(value)
-        elif isinstance(value, el):
-            value = value
-        else:
-            raise XPathEvaluationError("connected value must be a element or string")
-        self._others.append(
-            (
-                "//",
-                value,
-            )
+        return self._add_other(
+            conn="//",
+            other=ele._any_to_expr_in_ele(other),
         )
-        return self
 
     @override
     def part(
@@ -396,8 +446,8 @@ class el(_node):
         ret = self._name
         if self._axis is not None:
             ret = f"{self._axis}::{ret}"
-        for pred in self._preds:
-            ret = f"{ret}[{pred.full()}]"
+        for expr in self._exprs:
+            ret = f"{ret}[{expr.full()}]"
         return ret
 
     @override
@@ -408,3 +458,41 @@ class el(_node):
         for conn, other in self._others:
             ret += f"{conn}{other.full()}"
         return ret
+
+    @staticmethod
+    def _any_to_expr_in_ele(
+        val: Any,
+    ) -> expr:
+        if isinstance(val, ele):
+            return val
+        elif isinstance(val, str):
+            return ele(val)
+        elif isinstance(val, expr):
+            return val
+        else:
+            raise XPathEvaluationError("Value must be a string or expression")
+
+
+def _any_to_expr(
+    val: Any,
+) -> expr:
+    """Convert any value to a xpath predicate."""
+    if isinstance(val, expr):
+        return val
+    elif isinstance(val, bool):
+        return _any(val)
+    elif isinstance(val, int):
+        return _index(val)
+    elif isinstance(val, str):
+        return _str(val)
+    else:
+        return _any(val)
+
+
+def _any_to_xpath_str(
+    val: Any,
+) -> str:
+    """Convert any value to its string representation for XPath, with booleans as 'true'/'false'."""
+    if isinstance(val, bool):
+        return str(val).lower()
+    return str(val)

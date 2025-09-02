@@ -4,7 +4,7 @@ import lxml
 import lxml.etree
 
 from .exceptions import XPathError, XPathModificationError, XPathSelectionError
-from .expressions import el
+from .expressions import expr, ele, dot, fun
 
 
 class XPathElement:
@@ -75,52 +75,64 @@ class XPathElement:
         self,
     ) -> List[str]:
         """Return a list of direct text nodes under this element."""
-        return self._ele.xpath("./text()")
+        return self.xpath(ele(".") / fun("text"))
 
     def string(
         self,
     ) -> str:
         """Return the string value of this element and all its descendants."""
-        return self._ele.xpath("string(.)")
+        return self.xpath(fun("string", dot()))
 
     def children(
         self,
-        element: Union[str, el],
+        element: Union[str, ele],
     ) -> "XPathElementList":
         """Return all direct child elements matching the given tag/expression."""
         if isinstance(element, str):
-            element = el(element)
+            element = ele(element)
         return XPathElementList(self._ele.xpath(f"./{element}"))
 
     def child(
         self,
-        element: Union[str, el],
+        element: Union[str, ele],
     ) -> "XPathElement":
         """Return the first direct child element matching the given tag/expression."""
         return self.children(element).one()
 
     def descendants(
         self,
-        element: Union[str, el],
+        element: Union[str, ele],
     ) -> "XPathElementList":
         """Return all descendant elements matching the given tag/expression."""
         if isinstance(element, str):
-            element = el(element)
+            element = ele(element)
         return XPathElementList(self._ele.xpath(f".//{element}"))
 
     def descendant(
         self,
-        element: Union[str, el],
+        element: Union[str, ele],
     ) -> "XPathElement":
         """Return the first descendant element matching the given tag/expression."""
         return self.descendants(element).one()
 
     def xpath(
         self,
-        string: str,
-    ) -> "XPathElementList":
+        val: Union[expr, str],
+    ) -> Union[str, float, bool, "XPathElementList", List[str]]:
         """Run an arbitrary XPath query and return the results as XPathElementList."""
-        return XPathElementList(self._ele.xpath(string))
+        res = self._ele.xpath(str(val))
+        if isinstance(res, bool):
+            return res
+        elif isinstance(res, str):
+            return res
+        elif isinstance(res, float):
+            return res
+        elif isinstance(res, list):
+            if all(isinstance(r, lxml.etree._Element) for r in res):
+                return XPathElementList(res)
+            elif all(isinstance(r, str) for r in res):
+                return res
+        raise XPathSelectionError("Unexpected return value from lxml")
 
     def parent(
         self,

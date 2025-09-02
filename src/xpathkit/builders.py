@@ -1,7 +1,7 @@
-from .expressions import attr, el
+from .expressions import ele, attr, dot, fun
 
 
-class _elbuilder:
+class _elebuilder:
     """
     A convenient builder for common HTML element XPath expressions.
     Provides properties for standard tags (div, span, ul, etc.) and supports custom tags via __call__.
@@ -9,178 +9,186 @@ class _elbuilder:
     """
 
     @property
-    def html(self) -> el:
-        return el("html")
+    def parent(self) -> ele:
+        return ele("..")
 
     @property
-    def head(self) -> el:
-        return el("head")
+    def root(self) -> ele:
+        return ele(".")
 
     @property
-    def body(self) -> el:
-        return el("body")
+    def html(self) -> ele:
+        return ele("html")
 
     @property
-    def div(self) -> el:
-        return el("div")
+    def head(self) -> ele:
+        return ele("head")
 
     @property
-    def span(self) -> el:
-        return el("span")
+    def body(self) -> ele:
+        return ele("body")
 
     @property
-    def header(self) -> el:
-        return el("header")
+    def div(self) -> ele:
+        return ele("div")
 
     @property
-    def footer(self) -> el:
-        return el("footer")
+    def span(self) -> ele:
+        return ele("span")
 
     @property
-    def main(self) -> el:
-        return el("main")
+    def header(self) -> ele:
+        return ele("header")
 
     @property
-    def section(self) -> el:
-        return el("section")
+    def footer(self) -> ele:
+        return ele("footer")
 
     @property
-    def article(self) -> el:
-        return el("article")
+    def main(self) -> ele:
+        return ele("main")
 
     @property
-    def nav(self) -> el:
-        return el("nav")
+    def section(self) -> ele:
+        return ele("section")
 
     @property
-    def aside(self) -> el:
-        return el("aside")
+    def article(self) -> ele:
+        return ele("article")
 
     @property
-    def p(self) -> el:
-        return el("p")
+    def nav(self) -> ele:
+        return ele("nav")
 
     @property
-    def h1(self) -> el:
-        return el("h1")
+    def aside(self) -> ele:
+        return ele("aside")
 
     @property
-    def h2(self) -> el:
-        return el("h2")
+    def p(self) -> ele:
+        return ele("p")
 
     @property
-    def h3(self) -> el:
-        return el("h3")
+    def h1(self) -> ele:
+        return ele("h1")
 
     @property
-    def h4(self) -> el:
-        return el("h4")
+    def h2(self) -> ele:
+        return ele("h2")
 
     @property
-    def h5(self) -> el:
-        return el("h5")
+    def h3(self) -> ele:
+        return ele("h3")
 
     @property
-    def h6(self) -> el:
-        return el("h6")
+    def h4(self) -> ele:
+        return ele("h4")
 
     @property
-    def strong(self) -> el:
-        return el("strong")
+    def h5(self) -> ele:
+        return ele("h5")
 
     @property
-    def em(self) -> el:
-        return el("em")
+    def h6(self) -> ele:
+        return ele("h6")
 
     @property
-    def b(self) -> el:
-        return el("b")
+    def strong(self) -> ele:
+        return ele("strong")
 
     @property
-    def i(self) -> el:
-        return el("i")
+    def em(self) -> ele:
+        return ele("em")
 
     @property
-    def a(self) -> el:
-        return el("a")
+    def b(self) -> ele:
+        return ele("b")
 
     @property
-    def img(self) -> el:
-        return el("img")
+    def i(self) -> ele:
+        return ele("i")
 
     @property
-    def ul(self) -> el:
-        return el("ul")
+    def a(self) -> ele:
+        return ele("a")
 
     @property
-    def ol(self) -> el:
-        return el("ol")
+    def img(self) -> ele:
+        return ele("img")
 
     @property
-    def li(self) -> el:
-        return el("li")
+    def ul(self) -> ele:
+        return ele("ul")
 
     @property
-    def table(self) -> el:
-        return el("table")
+    def ol(self) -> ele:
+        return ele("ol")
 
     @property
-    def thead(self) -> el:
-        return el("thead")
+    def li(self) -> ele:
+        return ele("li")
 
     @property
-    def tbody(self) -> el:
-        return el("tbody")
+    def table(self) -> ele:
+        return ele("table")
 
     @property
-    def tr(self) -> el:
-        return el("tr")
+    def thead(self) -> ele:
+        return ele("thead")
 
     @property
-    def th(self) -> el:
-        return el("th")
+    def tbody(self) -> ele:
+        return ele("tbody")
 
     @property
-    def td(self) -> el:
-        return el("td")
+    def tr(self) -> ele:
+        return ele("tr")
 
     @property
-    def form(self) -> el:
-        return el("form")
+    def th(self) -> ele:
+        return ele("th")
 
     @property
-    def input(self) -> el:
-        return el("input")
+    def td(self) -> ele:
+        return ele("td")
 
     @property
-    def button(self) -> el:
-        return el("button")
+    def form(self) -> ele:
+        return ele("form")
 
     @property
-    def textarea(self) -> el:
-        return el("textarea")
+    def input(self) -> ele:
+        return ele("input")
 
     @property
-    def selct(self) -> el:
-        return el("selct")
+    def button(self) -> ele:
+        return ele("button")
 
     @property
-    def option(self) -> el:
-        return el("option")
+    def textarea(self) -> ele:
+        return ele("textarea")
 
     @property
-    def label(self) -> el:
-        return el("label")
+    def selct(self) -> ele:
+        return ele("selct")
 
     @property
-    def any(self) -> el:
-        return el("*")
+    def option(self) -> ele:
+        return ele("option")
+
+    @property
+    def label(self) -> ele:
+        return ele("label")
+
+    @property
+    def any(self) -> ele:
+        return ele("*")
 
     def __call__(
         self,
         tag: str,
-    ) -> el:
-        return el(tag)
+    ) -> ele:
+        return ele(tag)
 
 
 class _attrbuilder:
@@ -286,5 +294,124 @@ class _attrbuilder:
         return attr(name)
 
 
-E = _elbuilder()
+class _funcbuilder:
+
+    def position(self, *args):
+        return fun("position", *args)
+
+    def last(self, *args):
+        return fun("last", *args)
+
+    def count(self, *args):
+        return fun("count", *args)
+
+    def id(self, *args):
+        return fun("id", *args)
+
+    def local_name(self, *args):
+        return fun("local-name", *args)
+
+    def name(self, *args):
+        return fun("name", *args)
+
+    def namespace_uri(self, *args):
+        return fun("namespace-uri", *args)
+
+    def current(self, *args):
+        return fun("current", *args)
+
+    def string(self, *args):
+        return fun("string", *args)
+
+    def concat(self, *args):
+        return fun("concat", *args)
+
+    def contains(self, *args):
+        return fun("contains", *args)
+
+    def starts_with(self, *args):
+        return fun("starts-with", *args)
+
+    def ends_with(self, *args):
+        return fun("ends-with", *args)
+
+    def substring(self, *args):
+        return fun("substring", *args)
+
+    def substring_before(self, *args):
+        return fun("substring-before", *args)
+
+    def substring_after(self, *args):
+        return fun("substring-after", *args)
+
+    def normalize_space(self, *args):
+        return fun("normalize-space", *args)
+
+    def string_length(self, *args):
+        return fun("string-length", *args)
+
+    def translate(self, *args):
+        return fun("translate", *args)
+
+    def text(self, *args):
+        return fun("text", *args)
+
+    def string_join(self, *args):
+        return fun("string-join", *args)
+
+    def matches(self, *args):
+        return fun("matches", *args)
+
+    def replace(self, *args):
+        return fun("replace", *args)
+
+    def boolean(self, *args):
+        return fun("boolean", *args)
+
+    def not_(self, *args):
+        return fun("not", *args)
+
+    def true(self, *args):
+        return fun("true", *args)
+
+    def false(self, *args):
+        return fun("false", *args)
+
+    def lang(self, *args):
+        return fun("lang", *args)
+
+    def number(self, *args):
+        return fun("number", *args)
+
+    def sum(self, *args):
+        return fun("sum", *args)
+
+    def floor(self, *args):
+        return fun("floor", *args)
+
+    def ceiling(self, *args):
+        return fun("ceiling", *args)
+
+    def round(self, *args):
+        return fun("round", *args)
+
+    def min(self, *args):
+        return fun("min", *args)
+
+    def max(self, *args):
+        return fun("max", *args)
+
+    def avg(self, *args):
+        return fun("avg", *args)
+
+    def __call__(
+        self,
+        *args,
+        name: str,
+    ):
+        return fun(name, *args)
+
+
+E = _elebuilder()
 A = _attrbuilder()
+F = _funcbuilder()

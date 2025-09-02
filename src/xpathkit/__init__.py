@@ -12,6 +12,7 @@ from .__version__ import (
 from .builders import (
     A,
     E,
+    F,
 )
 from .exceptions import (
     XPathError,
@@ -20,13 +21,15 @@ from .exceptions import (
     XPathSelectionError,
 )
 from .expressions import (
-    attr,
-    el,
     expr,
-    value,
+    attr,
+    dot,
+    fun,
+    ele,
 )
 from .xpathkit import (
     XPathElement,
     XPathElementList,
     html,
+    xml,
 )
