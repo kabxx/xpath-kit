@@ -19,7 +19,7 @@ And say hello to a more intuitive and IDE-friendly way of writing queries:
 ## ✨ Features
 
 -   **🐍 Fluent & Pythonic Interface**: Chain methods and operators (`/`, `//`, `[]`, `&`, `|`, `==`, `>`) to build complex XPath expressions naturally using familiar Python logic.
--   **💡 Smart Builders**: Use `E` (elements), `A` (attributes), `F` (functions), and `D` (dot/current node) for a highly readable syntax with excellent IDE autocompletion support.
+-   **💡 Smart Builders**: Use `E` (elements), `A` (attributes), and `F` (functions) for a highly readable syntax with excellent IDE autocompletion support.
 -   **📖 Superb Readability & Maintainability**: Complex queries become self-documenting. It's easier to understand, debug, and modify your selectors.
 -   **💪 Powerful Predicate Logic**: Easily create sophisticated predicates for attributes, text, and functions. Gracefully handle multi-class selections with `any()`, `all()`, and `none()`.
 -   **🔩 Convenient DOM Manipulation**: The result objects are powerful wrappers around `lxml` elements, allowing for easy DOM traversal and manipulation (e.g., `append`, `remove`, `parent`, `next_sibling`).
@@ -45,7 +45,7 @@ The library requires `lxml` as a dependency, which will be installed automatical
 Here's a simple example of how to use `xpath-kit` to parse a piece of HTML and extract information.
 
 ```python
-from xpathkit import html, E, A, F, D
+from xpathkit import html, E, A, F
 
 html_content = """
 <html>
@@ -115,14 +115,13 @@ root_html = html("<div><p>Hello</p></div>")
 root_xml = xml(path="data.xml")
 ```
 
-### 2. The Smart Builders (E, A, F, D)
+### 2. The Smart Builders (E, A, F)
 
 These are the heart of `xpath-kit`, making expression building effortless.
 
 -   **`E` (Element)**: Builds element nodes. E.g., `E.div`, `E.a`, or custom tags `E("my-tag")`.
 -   **`A` (Attribute)**: Builds attribute nodes within predicates. E.g., `A.id`, `A.href`, or custom attributes `A("data-id")`.
 -   **`F` (Function)**: Builds XPath functions. E.g., `F.contains()`, `F.not_()`, `F.position()`.
--   **`D` (Dot)**: Represents the current node (`.`), typically used for querying its string value.
 
 *Note*: Since `class` and `for` are reserved keywords in Python, use a trailing underscore: `A.class_` and `A.for_`.
 
@@ -163,18 +162,20 @@ query_has_href = E.a[A.href]
 query = E.li[A.class_.contains("item") & F.not_(A.class_.contains("disabled"))]
 ```
 
-#### Text/Value Predicates with `D`
+#### Text/Value Predicates
 
-`D` represents the string value of the current node (the result of `string(.)`).
+To query against the string value of a node (`.`), import the `dot` class.
 
 ```python
+from xpathkit import dot
+
 # Find an <h1> whose text is exactly "Welcome"
 # XPath: //h1[.="Welcome"]
-query = E.h1[D == "Welcome"]
+query = E.h1[dot() == "Welcome"]
 
 # Find a <p> whose text contains the word "paragraph"
 # XPath: //p[contains(., "paragraph")]
-query_contains = E.p[D.contains("paragraph")]
+query_contains = E.p[dot().contains("paragraph")]
 ```
 
 #### Functional Predicates with `F`
@@ -252,8 +253,9 @@ query_last = E.li[-1]
 Modify the document tree with ease.
 
 ```python
-from xpathkit import XPathElement
+from xpathkit import XPathElement, E, A
 
+# Assuming 'root' is a parsed XPathElement
 # Find the <ul> element
 ul = root.descendant(E.ul)
 
