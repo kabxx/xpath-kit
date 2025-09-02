@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Versions](https://img.shields.io/pypi/pyversions/xpath-kit.svg)](https://pypi.org/project/xpath-kit/)
 
-**xpath-kit** is a Python library that provides a fluent, object-oriented, and Pythonic interface for building and executing XPath queries on top of `lxml`. It transforms complex XPath string composition into a readable and maintainable chain of objects and methods.
+**xpath-kit** is a powerful Python library that provides a fluent, object-oriented, and Pythonic interface for building and executing XPath queries on top of `lxml`. It transforms complex, error-prone XPath string composition into a highly readable and maintainable chain of objects and methods.
 
 Say goodbye to messy, hard-to-read XPath strings:
 
@@ -12,22 +12,23 @@ Say goodbye to messy, hard-to-read XPath strings:
 
 And say hello to a more intuitive and IDE-friendly way of writing queries:
 
-`E.div[(A.id == "main") & A.class_.any("content")] / E.ul / E.li[1]`
+`E.div[(A.id == "main") & A.class_.contains("content")] / E.ul / E.li[1]`
 
 ---
 
-## Features
+## ✨ Features
 
--   **✨ Fluent & Pythonic Interface**: Chain methods and operators (`/`, `//`, `[]`, `&`, `|`) to build complex XPath expressions naturally using familiar Python logic.
--   **💡 IDE-Friendly Builders**: Use `E` (for elements) and `A` (for attributes) for a highly readable syntax with excellent autocompletion support.
--   **📖 Readability & Maintainability**: Complex queries become self-documenting. It's easier to understand, debug, and modify your selectors.
--   **💪 Powerful Selection**: Easily create sophisticated predicates for attributes, including checking for multiple class names (`any`, `all`, `none`).
--   **🔩 DOM Manipulation**: The result objects are powerful wrappers around `lxml` elements, allowing for easy DOM traversal and manipulation (e.g., `append`, `remove`, `parent`).
--   **🔒 Type-Hinted**: The entire library is fully type-hinted for a better development experience with modern IDEs.
+-   **🐍 Fluent & Pythonic Interface**: Chain methods and operators (`/`, `//`, `[]`, `&`, `|`, `==`, `>`) to build complex XPath expressions naturally using familiar Python logic.
+-   **💡 Smart Builders**: Use `E` (elements), `A` (attributes), `F` (functions), and `D` (dot/current node) for a highly readable syntax with excellent IDE autocompletion support.
+-   **📖 Superb Readability & Maintainability**: Complex queries become self-documenting. It's easier to understand, debug, and modify your selectors.
+-   **💪 Powerful Predicate Logic**: Easily create sophisticated predicates for attributes, text, and functions. Gracefully handle multi-class selections with `any()`, `all()`, and `none()`.
+-   **🔩 Convenient DOM Manipulation**: The result objects are powerful wrappers around `lxml` elements, allowing for easy DOM traversal and manipulation (e.g., `append`, `remove`, `parent`, `next_sibling`).
+-   **🔒 Fully Type-Hinted**: The entire library is fully type-hinted for an unmatched developer experience and static analysis with modern IDEs.
+-   **⚙️ HTML & XML Support**: Seamlessly parse both document types with `html()` and `xml()` entry points.
 
 ---
 
-## Installation
+## 🚀 Installation
 
 Install `xpath-kit` from PyPI using pip:
 
@@ -39,12 +40,12 @@ The library requires `lxml` as a dependency, which will be installed automatical
 
 ---
 
-## Quick Start
+## 🏁 Quick Start
 
 Here's a simple example of how to use `xpath-kit` to parse a piece of HTML and extract information.
 
 ```python
-from xpathkit import html, E, A
+from xpathkit import html, E, A, F, D
 
 html_content = """
 <html>
@@ -62,14 +63,14 @@ html_content = """
 </html>
 """
 
-# Parse the HTML content
+# 1. Parse the HTML content
 root = html(html_content)
 
-# Build a query to find the active list item
-# This translates to: .//ul[contains(@class, "item-list")]/li[contains(@class, "active")]
-query = E.ul[A.class_.any("item-list")] / E.li[A.class_.any("active")]
+# 2. Build a query to find the <li> element with both "item" and "active" classes
+# XPath: .//ul[contains(@class, "item-list")]/li[contains(@class, "item") and contains(@class, "active")]
+query = E.ul[A.class_.contains("item-list")] / E.li[A.class_.all("item", "active")]
 
-# Execute the query and get a single element
+# 3. Execute the query and get a single element
 active_item = root.descendant(query)
 
 # Print its content and attributes
@@ -81,168 +82,196 @@ print(f"Class attribute: {active_item['class']}")
 # Tag: li
 # Text: Item 1
 # Class attribute: item active
+
+# 4. Build a more complex query: find all <li> elements whose class does NOT contain 'disabled'
+# XPath: .//li[not(contains(@class, "disabled"))]
+query_enabled = E.li[F.not_(A.class_.contains("disabled"))]
+
+# 5. Execute the query and process the list of results
+enabled_items = root.descendants(query_enabled)
+item_texts = enabled_items.map(lambda item: item.string())
+print(f"\nEnabled items: {item_texts}")
+
+# --- Output ---
+# Enabled items: ['Item 1', 'Item 2']
+
 ```
 
 ---
 
-## Core Concepts
+## 📚 Core Concepts
 
-### 1. Parsing and Entrypoint
+### 1. Parsing Entrypoints
 
-The `html()` function is the main entry point. It takes a string, bytes of HTML/XML content, or a file path and returns the root `XPathElement`.
+Use the `html()` or `xml()` functions to start. They accept a string, bytes, or a file path.
 
 ```python
-from xpathkit import html
+from xpathkit import html, xml
 
-root = html("<p>Hello</p>")
-# Or from a file
-# root = html(path="index.html")
+# Parse an HTML string
+root_html = html("<div><p>Hello</p></div>")
+
+# Parse an XML file
+root_xml = xml(path="data.xml")
 ```
 
-### 2. Building Expressions with `E` and `A` (Recommended)
+### 2. The Smart Builders (E, A, F, D)
 
-The `E` and `A` objects are convenient builders that provide a more readable and autocompletion-friendly way to create expressions.
+These are the heart of `xpath-kit`, making expression building effortless.
 
--   **`E` (Element Builder)**: Represents an element node. Access common tags as properties (e.g., `E.div`, `E.a`, `E.p`).
--   **`A` (Attribute Builder)**: Represents an attribute within a predicate. Access common attributes as properties (e.g., `A.id`, `A.href`).
+-   **`E` (Element)**: Builds element nodes. E.g., `E.div`, `E.a`, or custom tags `E("my-tag")`.
+-   **`A` (Attribute)**: Builds attribute nodes within predicates. E.g., `A.id`, `A.href`, or custom attributes `A("data-id")`.
+-   **`F` (Function)**: Builds XPath functions. E.g., `F.contains()`, `F.not_()`, `F.position()`.
+-   **`D` (Dot)**: Represents the current node (`.`), typically used for querying its string value.
 
-For **custom tags or attributes**, use them as functions: `E("my-tag")` or `A("data-id")`.
-
-Because `class` and `for` are reserved keywords in Python, use a trailing underscore: `A.class_` and `A.for_`.
+*Note*: Since `class` and `for` are reserved keywords in Python, use a trailing underscore: `A.class_` and `A.for_`.
 
 ### 3. Path Selection (`/` and `//`)
 
 Use the division operators to define relationships between elements.
 
--   **`/`**: Selects a direct child.
--   **`//`**: Selects a descendant at any level.
+-   `/`: Selects a direct child.
+-   `//`: Selects a descendant at any level.
 
 ```python
 # Selects a <p> that is a direct child of a <div>
-# Equivalent to: div/p
+# XPath: div/p
 query_child = E.div / E.p
 
-# You can also use strings for simplicity
-query_child_str = E.div / "p"
-
 # Selects an <a> that is a descendant of the <body>
-# Equivalent to: body//a
+# XPath: body//a
 query_descendant = E.body // E.a
 ```
 
 ### 4. Predicates (`[]`)
 
-Use square brackets on an `E` object to add conditions (predicates).
+Use square brackets `[]` on an element to add filtering conditions. This is where `xpath-kit` truly shines.
 
 #### Attribute Predicates with `A`
 
 ```python
-# Find an input with name="username"
-# Equivalent to: //input[@name="username"]
-query = E.input[A.name == "username"]
+# Find a div with id="main"
+# XPath: //div[@id="main"]
+query = E.div[A.id == "main"]
 
-# Find an element with a specific class
-# Equivalent to: //div[contains(@class, "widget")]
-query = E.div[A.class_.any("widget")]
+# Find an <a> that has an href attribute
+# XPath: //a[@href]
+query_has_href = E.a[A.href]
 
-# Find an element that has ALL of the given classes
-# Equivalent to: //li[contains(@class, "item") and contains(@class, "active")]
-query = E.li[A.class_.all("item", "active")]
+# Find an <li> whose class contains "item" but NOT "disabled"
+# XPath: //li[contains(@class,"item") and not(contains(@class,"disabled"))]
+query = E.li[A.class_.contains("item") & F.not_(A.class_.contains("disabled"))]
+```
 
-# Find an element that does NOT contain any of the given classes
-# Equivalent to: //button[not(contains(@class, "disabled")) and not(contains(@class, "hidden"))]
-query = E.button[A.class_.none("disabled", "hidden")]
+#### Text/Value Predicates with `D`
+
+`D` represents the string value of the current node (the result of `string(.)`).
+
+```python
+# Find an <h1> whose text is exactly "Welcome"
+# XPath: //h1[.="Welcome"]
+query = E.h1[D == "Welcome"]
+
+# Find a <p> whose text contains the word "paragraph"
+# XPath: //p[contains(., "paragraph")]
+query_contains = E.p[D.contains("paragraph")]
+```
+
+#### Functional Predicates with `F`
+
+Use `F` to call any standard XPath function inside a predicate.
+
+```python
+# Select the first list item
+# XPath: //li[position()=1]
+query_first = E.li[F.position() == 1]
+
+# Select the last list item
+# XPath: //li[last()]
+query_last = E.li[F.last()]
 ```
 
 #### Combining Predicates with `&` and `|`
 
--   **`&`**: Logical `and`.
--   **`|`**: Logical `or`.
+-   `&`: Logical `and`
+-   `|`: Logical `or`
 
 ```python
-# Find a link that has a specific href AND a target attribute
-# //a[@href="/home" and @target]
+# Find an <a> with href="/home" AND a target attribute
+# XPath: //a[@href="/home" and @target]
 query_and = E.a[(A.href == "/home") & A.target]
 
-# Find an element with id="sidebar" OR class="nav"
-# //div[@id="sidebar" or contains(@class,"nav")]
-query_or = E.div[(A.id == "sidebar") | A.class_.any("nav")]
+# Find a <div> with id="sidebar" OR class="nav"
+# XPath: //div[@id="sidebar" or contains(@class,"nav")]
+query_or = E.div[(A.id == "sidebar") | A.class_.contains("nav")]
 ```
-
-**Note:** Due to Python's operator precedence, it's highly recommended to wrap combined conditions in parentheses `()`.
+**Important:** Due to Python's operator precedence, it's highly recommended to wrap combined conditions in parentheses `()`.
 
 #### Positional Predicates
 
-Use integers to specify position (1-based index).
+Use integers (1-based) or negative integers (from the end) directly.
 
 ```python
-# Select the second list item
-# //ul/li[2]
-query = E.ul / E.li[2]
+# Select the second <li>
+# XPath: //li[2]
+query = E.li[2]
 
-# Select the first list item
-# //ul/li[1]
-query_first = E.ul / E.li[1]
+# Select the last <li> (equivalent to F.last())
+# XPath: //li[last()]
+query_last = E.li[-1]
 ```
 
 ### 5. Working with Results
 
-Queries return either an `XPathElement` (for `.child()`/`.descendant()`) or an `XPathElementList` (for `.children()`/`.descendants()`).
+-   `.child()`/`.descendant()` return a single `XPathElement`.
+-   `.children()`/`.descendants()` return an `XPathElementList`.
 
 #### `XPathElement` (Single Result)
 
 -   `.tag`: The element's tag name (e.g., `'div'`).
--   `.attr`: A dictionary of attributes.
+-   `.attr`: A dictionary of all attributes.
 -   `element['name']`: Access an attribute directly.
--   `.string()`: Get all concatenated text from the element and its children.
--   `.text()`: Get only the direct text nodes of the element.
+-   `.string()`: Get the concatenated text of the element and all its children (`string(.)`).
+-   `.text()`: Get a list of only the element's direct text nodes (`./text()`).
 -   `.parent()`: Get the parent element.
+-   `.next_sibling()` / `.prev_sibling()`: Get adjacent sibling elements.
+-   `.xpath(query)`: Execute a raw string or a constructed query within the context of this element.
 
 #### `XPathElementList` (Multiple Results)
 
--   `.one()`: Returns the single element in the list. Raises an error if the list doesn't contain exactly one element.
--   `.first()` / `.last()`: Get the first or last element. Returns `None` if the list is empty.
--   `len()`: Get the number of elements.
+-   `.one()`: Ensures the list contains exactly one element and returns it; otherwise, raises an error.
+-   `.first()` / `.last()`: Get the first or last element; raises an error if the list is empty.
+-   `len(element_list)`: Get the number of elements.
 -   `.filter(func)`: Filter the list based on a function.
--   `.map(func)`: Apply a function to each element and return a list of results.
--   Can be iterated over directly: `for e in element_list: ...`
-
-```python
-links = root.descendants(E.a)
-
-# Map to get all hrefs
-hrefs = links.map(lambda link: link["href"])
-
-# Filter for external links
-external_links = links.filter(lambda link: link["href"].startswith("http"))
-```
+-   `.map(func)`: Apply a function to each element and return a list of the results.
+-   Can be iterated over directly: `for e in my_list: ...`
+-   Supports slicing and indexing: `my_list[0]`, `my_list[-1]`
 
 ### 6. DOM Manipulation
 
-`XPathElement` provides methods to modify the XML/HTML tree.
+Modify the document tree with ease.
 
 ```python
 from xpathkit import XPathElement
 
-# Find an element
+# Find the <ul> element
 ul = root.descendant(E.ul)
 
-# Create a new element
+# Create and append a new <li>
 new_li = XPathElement.create("li", attr={"class": "new-item"}, text="Item 4")
-
-# Append it
 ul.append(new_li)
 
 # Remove an element
-item_to_remove = ul.child(E.li[A.class_.any("disabled")])
+item_to_remove = ul.child(E.li[A.class_.contains("disabled")])
 if item_to_remove:
     ul.remove(item_to_remove)
 
-print(root.tostring()) # See the modified HTML
+# Print the modified HTML
+print(root.tostring())
 ```
 
 ---
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the `LICENSE` file for details.
