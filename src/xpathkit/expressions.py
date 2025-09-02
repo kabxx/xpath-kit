@@ -312,9 +312,24 @@ class el(_node):
         pred: Union["attr", "value", "expr", Any],
     ) -> "el":
         """Add a predicate to this element node."""
-        if not isinstance(pred, _pred):
-            pred = value(pred)
-        self._preds.append(pred)
+
+        def _to_pred(
+            val: Any,
+        ) -> _pred:
+            """Convert any value to a predicate."""
+            if isinstance(val, _pred):
+                return val
+            if isinstance(val, int):
+                if val < 0:
+                    offset = abs(val) - 1
+                    return value(f"last()-{offset}" if offset > 0 else "last()")
+                elif val == 0:
+                    raise XPathEvaluationError("Zero is not a valid XPath index")
+                else:
+                    return value(val)
+            return value(val)
+
+        self._preds.append(_to_pred(pred))
         return self
 
     def __truediv__(
