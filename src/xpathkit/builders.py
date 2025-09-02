@@ -9,12 +9,12 @@ class _elebuilder:
     """
 
     @property
-    def parent(self) -> ele:
-        return ele("..")
-
-    @property
     def root(self) -> ele:
         return ele(".")
+
+    @property
+    def parent(self) -> ele:
+        return ele("..")
 
     @property
     def html(self) -> ele:
@@ -188,6 +188,7 @@ class _elebuilder:
         self,
         tag: str,
     ) -> ele:
+        """Initialize an element for XPath expressions."""
         return ele(tag)
 
 
@@ -290,11 +291,19 @@ class _attrbuilder:
     def rowspan(self) -> attr:
         return attr("rowspan")
 
-    def __call__(self, name: str) -> attr:
+    def __call__(
+        self,
+        name: str,
+    ) -> attr:
+        """Initialize a custom attribute for XPath expressions."""
         return attr(name)
 
 
 class _funcbuilder:
+    """
+    A builder for common XPath function calls.
+    Provides methods for standard XPath functions and supports custom functions via __call__.
+    """
 
     def position(self, *args):
         return fun("position", *args)
@@ -409,6 +418,7 @@ class _funcbuilder:
         *args,
         name: str,
     ):
+        """Initialize a function call for XPath expressions."""
         return fun(name, *args)
 
 

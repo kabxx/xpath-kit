@@ -25,6 +25,7 @@ class XPathElement:
         attr: Optional[Dict[str, str]] = None,
         text: Optional[str] = None,
     ) -> "XPathElement":
+        """Create a new XPathElement."""
         element = lxml.etree.Element(tag, attrib=attr or {})
         element.text = text
         return XPathElement(element)
@@ -43,6 +44,7 @@ class XPathElement:
     def start(
         self,
     ) -> str:
+        """Return the start tag as string representation."""
         ret = f"<{self.tag}"
         attr = " ".join(f'{k}="{v.strip()}"' for k, v in self.attr.items())
         if attr:
@@ -54,18 +56,19 @@ class XPathElement:
     def end(
         self,
     ) -> str:
+        """Return the end tag as string representation."""
         return f"</{self.tag}>"
 
     def __str__(
         self,
     ):
-        """Return the start tag as string representation."""
+        """Return the start tag string of the element (e.g. <tag ...>)."""
         return self.start
 
     def tostring(
         self,
     ) -> str:
-        """Return the string serialization of the element."""
+        """Return the full XML serialization of the element as a string."""
         return lxml.etree.tostring(
             self._ele,
             encoding="unicode",
@@ -74,20 +77,20 @@ class XPathElement:
     def text(
         self,
     ) -> List[str]:
-        """Return a list of direct text nodes under this element."""
+        """Return a list of direct text nodes under this element (not including descendants)."""
         return self.xpath(ele(".") / fun("text"))
 
     def string(
         self,
     ) -> str:
-        """Return the string value of this element and all its descendants."""
+        """Return the concatenated text content of this element and all its descendants."""
         return self.xpath(fun("string", dot()))
 
     def children(
         self,
         element: Union[str, ele],
     ) -> Union["XPathElementList", str, float, bool, List[str]]:
-        """Return all direct child elements matching the given tag/expression."""
+        """Return all direct children matching the given tag or XPath expression."""
         if isinstance(element, str):
             element = ele(element)
         return self.xpath(f"./{element}")
@@ -96,17 +99,17 @@ class XPathElement:
         self,
         element: Union[str, ele],
     ) -> "XPathElement":
-        """Return the first direct child element matching the given tag/expression."""
+        """Return the first direct child matching the given tag or XPath expression."""
         children = self.children(element)
         if not isinstance(children, XPathElementList):
-            raise XPathSelectionError("The xpath expression did not return any elements")
+            raise XPathSelectionError("XPath expression did not return any elements.")
         return children.one()
 
     def descendants(
         self,
         element: Union[str, ele],
     ) -> Union["XPathElementList", str, float, bool, List[str]]:
-        """Return all descendant elements matching the given tag/expression."""
+        """Return all descendants matching the given tag or XPath expression."""
         if isinstance(element, str):
             element = ele(element)
         return self.xpath(f".//{element}")
@@ -115,10 +118,10 @@ class XPathElement:
         self,
         element: Union[str, ele],
     ) -> "XPathElement":
-        """Return the first descendant element matching the given tag/expression."""
+        """Return the first descendant matching the given tag or XPath expression."""
         descendants = self.descendants(element)
         if not isinstance(descendants, XPathElementList):
-            raise XPathSelectionError("The xpath expression did not return any elements")
+            raise XPathSelectionError("XPath expression did not return any elements.")
         return descendants.one()
 
     def xpath(
@@ -183,6 +186,7 @@ class XPathElement:
         key: str,
         val: str,
     ) -> None:
+        """Set the value of the given attribute."""
         self._ele.attrib[key] = val
 
     def remove(
@@ -193,7 +197,9 @@ class XPathElement:
         try:
             self._ele.remove(child._ele)
         except ValueError as e:
-            raise XPathModificationError("Element is not a child of this element") from e
+            raise XPathModificationError(
+                "The element to be removed is not a child of this element."
+            ) from e
 
     def clear(
         self,
@@ -219,13 +225,13 @@ class XPathElement:
     def raw(
         self,
     ) -> lxml.etree._Element:
-        """return the raw lxml.etree._Element handle."""
+        """Return the underlying lxml.etree._Element object."""
         return self._ele
 
 
 class XPathElementList:
     """
-    A list-like wrapper for multiple XPathElement objects, supporting batch operations.
+    A list-like wrapper for multiple XPathElement objects, supporting batch operations such as filter, map, and iteration.
     """
 
     def __init__(
@@ -250,6 +256,7 @@ class XPathElementList:
     def len(
         self,
     ) -> int:
+        """Return the number of elements in the list."""
         return len(self._eles)
 
     def empty(
@@ -261,24 +268,29 @@ class XPathElementList:
     def one(
         self,
     ) -> XPathElement:
+        """Return the only element in the list, or raise if the list does not contain exactly one element."""
         if self.empty():
-            raise XPathSelectionError("No elements in group")
+            raise XPathSelectionError("No elements found in the list.")
         if self.len() != 1:
-            raise XPathSelectionError("Element list does not contain exactly one element")
+            raise XPathSelectionError(
+                "Element list does not contain exactly one element."
+            )
         return self._eles[0]
 
     def first(
         self,
     ) -> XPathElement:
+        """Return the first element in the list, or raise if the list is empty."""
         if self.empty():
-            raise XPathSelectionError("No elements in group")
+            raise XPathSelectionError("No elements found in the list.")
         return self._eles[0]
 
     def last(
         self,
     ) -> XPathElement:
+        """Return the last element in the list, or raise if the list is empty."""
         if self.empty():
-            raise XPathError("No elements in group")
+            raise XPathError("No elements found in the list.")
         return self._eles[-1]
 
     def __getitem__(
@@ -289,7 +301,9 @@ class XPathElementList:
         if isinstance(key, int):
             return self._eles[key]
         elif isinstance(key, slice):
-            return XPathElementList([e.raw() for e in self._eles[key.start : key.stop : key.step]])
+            return XPathElementList(
+                [e.raw() for e in self._eles[key.start : key.stop : key.step]]
+            )
         else:
             raise TypeError
 
@@ -297,7 +311,7 @@ class XPathElementList:
         self,
         func: Callable[[XPathElement], bool],
     ) -> "XPathElementList":
-        """Return a new XPathElementList filtered by the given function."""
+        """Return a new XPathElementList containing elements for which func(element) is True."""
         return XPathElementList([e._ele for e in self._eles if func(e)])
 
     def map(
@@ -311,7 +325,7 @@ class XPathElementList:
         self,
         func: Callable[[XPathElement], None],
     ) -> None:
-        """Apply a function to each element (no return)."""
+        """Apply a function to each element in the list. Does not return anything."""
         for e in self._eles:
             func(e)
 
@@ -333,11 +347,23 @@ def html(
     path: Optional[str] = None,
     encoding: str = "utf-8",
 ) -> XPathElement:
-    """Parse HTML content and return the root XPathElement."""
+    """
+    Parse HTML content or file and return the root XPathElement.
+
+    Args:
+        content: HTML content as a string or bytes.
+        path: Path to the HTML file.
+        encoding: Encoding to use if content is a string.
+    Returns:
+        XPathElement: The root element of the parsed HTML.
+    Raises:
+        ValueError: If neither or both content and path are provided.
+        XPathError: If parsing fails.
+    """
     if not content and not path:
-        raise ValueError("Either content or path must be provided")
+        raise ValueError("Either 'content' or 'path' must be provided.")
     if content and path:
-        raise ValueError("Only one of content or path must be provided")
+        raise ValueError("Only one of 'content' or 'path' can be provided, not both.")
 
     if not content:
         with open(path, "rb") as f:
@@ -358,11 +384,23 @@ def xml(
     path: Optional[str] = None,
     encoding: str = "utf-8",
 ) -> XPathElement:
-    """Parse XML content and return the root XPathElement."""
+    """
+    Parse XML content or file and return the root XPathElement.
+
+    Args:
+        content: XML content as a string or bytes.
+        path: Path to the XML file.
+        encoding: Encoding to use if content is a string.
+    Returns:
+        XPathElement: The root element of the parsed XML.
+    Raises:
+        ValueError: If neither or both content and path are provided.
+        XPathError: If parsing fails.
+    """
     if not content and not path:
-        raise ValueError("Either content or path must be provided")
+        raise ValueError("Either 'content' or 'path' must be provided.")
     if content and path:
-        raise ValueError("Only one of content or path must be provided")
+        raise ValueError("Only one of 'content' or 'path' can be provided, not both.")
 
     if not content:
         with open(path, "rb") as f:

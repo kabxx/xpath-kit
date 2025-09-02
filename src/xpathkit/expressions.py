@@ -6,6 +6,13 @@ from .exceptions import XPathEvaluationError
 class expr:
     """Abstract base node for XPath expression building."""
 
+    def __init__(
+        self,
+        **kwargs: Any,
+    ):
+        """Initialize an expression node for XPath expressions."""
+        super().__init__(**kwargs)
+
     def __str__(self):
         """Return the full XPath string representation of the node."""
         return self.full()
@@ -26,6 +33,7 @@ class expr:
     def _any_to_str_in_expr(
         val: Any,
     ) -> str:
+        """Convert any value to a string representation in the context of XPath expressions."""
         if isinstance(val, str):
             return f'"{val}"'
         elif isinstance(val, expr):
@@ -35,6 +43,14 @@ class expr:
 
 
 class _atom(expr):
+    """Base class for atomic XPath expression nodes."""
+
+    def __init__(
+        self,
+        **kwargs: Any,
+    ):
+        """Initialize an atomic node for XPath expressions."""
+        super().__init__(**kwargs)
 
     def part(
         self,
@@ -48,13 +64,16 @@ class _atom(expr):
 
 
 class _any(_atom):
+    """Atomic node for any value in XPath expressions (used for constants, numbers, booleans, etc.)."""
 
     def __init__(
         self,
         value: Any,
+        **kwargs: Any,
     ):
+        """Initialize an atomic node for XPath expressions."""
         self._value = value
-        super().__init__()
+        super().__init__(**kwargs)
 
     @override
     def part(
@@ -64,13 +83,16 @@ class _any(_atom):
 
 
 class _str(_atom):
+    """Atomic node for string values in XPath expressions."""
 
     def __init__(
         self,
         value: str,
+        **kwargs: Any,
     ):
+        """Initialize a string node for XPath expressions."""
         self._value = value
-        super().__init__()
+        super().__init__(**kwargs)
 
     @override
     def part(
@@ -80,13 +102,16 @@ class _str(_atom):
 
 
 class _index(_atom):
+    """Atomic node for index values in XPath expressions (handles negative and positive indices)."""
 
     def __init__(
         self,
         value: int,
+        **kwargs: Any,
     ):
+        """Initialize an index node for XPath expressions."""
         self._value = value
-        super().__init__()
+        super().__init__(**kwargs)
 
     @override
     def part(
@@ -102,13 +127,15 @@ class _index(_atom):
 
 
 class _bool(expr):
-    """Predicate node for XPath expression building."""
+    """A boolean expression for XPath predicates."""
 
     def __init__(
         self,
+        **kwargs: Any,
     ):
-        """Initialize a predicate node for XPath expression building."""
+        """Initialize a boolean expression for XPath predicates."""
         self._others: List[Tuple[str, _bool]] = []
+        super().__init__(**kwargs)
 
     def _add_other(
         self,
@@ -146,14 +173,17 @@ class _bool(expr):
 
 
 class _cond(_bool):
+    """A conditional expression for XPath predicates."""
 
     def __init__(
         self,
         key: str,
+        **kwargs: Any,
     ):
+        """Initialize a conditional expression for XPath predicates."""
         self._key = key
         self._conds: List[Tuple[str, str]] = []
-        super().__init__()
+        super().__init__(**kwargs)
 
     @property
     def key(
@@ -208,27 +238,37 @@ class _cond(_bool):
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(f"starts-with({self._key},{expr._any_to_str_in_expr(value)})")
+        return self._add_cond(
+            f"starts-with({self._key},{expr._any_to_str_in_expr(value)})"
+        )
 
     def ends_with(
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(f"ends-with({self._key},{expr._any_to_str_in_expr(value)})")
+        return self._add_cond(
+            f"ends-with({self._key},{expr._any_to_str_in_expr(value)})"
+        )
 
     def contains(
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(f"contains({self._key},{expr._any_to_str_in_expr(value)})")
+        return self._add_cond(
+            f"contains({self._key},{expr._any_to_str_in_expr(value)})"
+        )
 
     def all(
         self,
         *values: Any,
     ) -> "_cond":
+        """Match all values in the list."""
         return self._add_cond(
             self._and_join(
-                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
+                *[
+                    f"contains({self._key},{expr._any_to_str_in_expr(v)})"
+                    for v in values
+                ],
             ),
         )
 
@@ -236,9 +276,13 @@ class _cond(_bool):
         self,
         *values: Any,
     ) -> "_cond":
+        """Match any value in the list."""
         return self._add_cond(
             self._or_join(
-                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
+                *[
+                    f"contains({self._key},{expr._any_to_str_in_expr(v)})"
+                    for v in values
+                ],
             ),
         )
 
@@ -246,9 +290,13 @@ class _cond(_bool):
         self,
         *values: Any,
     ) -> "_cond":
+        """Match no values in the list."""
         return self._add_cond(
             self._and_join(
-                *[f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))" for v in values],
+                *[
+                    f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))"
+                    for v in values
+                ],
             ),
         )
 
@@ -313,9 +361,10 @@ class _cond(_bool):
         return ret
 
     @staticmethod
-    def _any_to_str(
+    def _any_to_str_in_cond(
         arg: Union["_cond", Any],
     ) -> str:
+        """Convert any value to a string representation in the context of predicates."""
         if isinstance(arg, str):
             return f'"{arg}"'
         elif isinstance(arg, _cond):
@@ -346,10 +395,14 @@ class attr(_cond):
     def __init__(
         self,
         name: str,
+        **kwargs: Any,
     ):
         """Initialize an attribute predicate node for XPath building."""
         self._name = name
-        super().__init__(key=f"@{self._name}")
+        super().__init__(
+            key=f"@{self._name}",
+            **kwargs,
+        )
 
     def or_(
         self,
@@ -366,36 +419,51 @@ class attr(_cond):
         return self & fun(attr(name=self._name))
 
 
-class dot(_cond):
-    def __init__(
-        self,
-    ):
-        """Initialize an attribute predicate node for XPath building."""
-        super().__init__(key=f".")
-
-
 class fun(_cond):
+    """Function node for XPath expressions, e.g. fun('text')."""
+
     def __init__(
         self,
         name: str,
         *args: Union["fun", "attr", "dot", Any],
+        **kwargs: Any,
     ):
-        super().__init__(key=f"{name}({','.join(expr._any_to_str_in_expr(arg) for arg in args)})")
+        """Initialize a function node for XPath expressions."""
+        super().__init__(
+            key=f"{name}({','.join(expr._any_to_str_in_expr(arg) for arg in args)})",
+            **kwargs,
+        )
+
+
+class dot(_cond):
+    """Node representing the current context (dot) in XPath expressions."""
+
+    def __init__(
+        self,
+        **kwargs: Any,
+    ):
+        """Initialize a dot node representing the current context in XPath."""
+        super().__init__(
+            key=f".",
+            **kwargs,
+        )
 
 
 class ele(expr):
-    """Element node for XPath building."""
+    """Element node for building XPath expressions."""
 
     def __init__(
         self,
         name: str,
         axis: Optional[str] = None,
+        **kwargs: Any,
     ):
         """Initialize an element node for XPath building."""
         self._name = name
         self._axis = axis
         self._exprs: List[expr] = []
         self._others: List[Tuple[str, "ele"]] = []
+        super().__init__(**kwargs)
 
     def _add_expr(
         self,
@@ -421,9 +489,13 @@ class ele(expr):
 
     def __truediv__(
         self,
-        other: Union[str, "ele"],
+        other: Union[str, expr],
     ) -> "ele":
         """Add a direct child element to this element node."""
+        if isinstance(other, dot):
+            raise XPathEvaluationError(
+                "dot() is not allowed as a descendant element. Because it represents the current context node."
+            )
         return self._add_other(
             conn="/",
             other=ele._any_to_expr_in_ele(other),
@@ -431,9 +503,13 @@ class ele(expr):
 
     def __floordiv__(
         self,
-        other: Union[str, "ele"],
+        other: Union[str, expr],
     ) -> "ele":
         """Add a descendant element to this element node."""
+        if isinstance(other, dot):
+            raise XPathEvaluationError(
+                "dot() is not allowed as a descendant element. Because it represents the current context node."
+            )
         return self._add_other(
             conn="//",
             other=ele._any_to_expr_in_ele(other),
@@ -463,6 +539,7 @@ class ele(expr):
     def _any_to_expr_in_ele(
         val: Any,
     ) -> expr:
+        """Convert any value to a xpath expression in element context."""
         if isinstance(val, ele):
             return val
         elif isinstance(val, str):
@@ -470,13 +547,13 @@ class ele(expr):
         elif isinstance(val, expr):
             return val
         else:
-            raise XPathEvaluationError("Value must be a string or expression")
+            raise XPathEvaluationError("Value must be a string or expr.")
 
 
 def _any_to_expr_in_pred(
     val: Any,
 ) -> expr:
-    """Convert any value to a xpath predicate."""
+    """Convert any value to a xpath expression in predicates."""
     if isinstance(val, expr):
         return val
     elif isinstance(val, bool):
@@ -492,7 +569,10 @@ def _any_to_expr_in_pred(
 def _any_to_xpath_str(
     val: Any,
 ) -> str:
-    """Convert any value to its string representation for XPath, with booleans as 'true'/'false'."""
+    """
+    Convert any value to its string representation for XPath.
+    Booleans are converted to 'true'/'false', others use str().
+    """
     if isinstance(val, bool):
         return str(val).lower()
     return str(val)

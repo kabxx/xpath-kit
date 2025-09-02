@@ -330,7 +330,7 @@ class TestErrorHandling:
     def test_one_on_empty_list_raises_error(self, html_doc):
         root = html(html_doc)
         items = root.descendants("non-existent-tag")
-        with pytest.raises(XPathSelectionError, match="No elements in group"):
+        with pytest.raises(XPathSelectionError, match="No elements found in the list"):
             items.one()
 
     def test_child_on_no_match_raises_error(self, html_doc):
@@ -346,13 +346,13 @@ class TestErrorHandling:
     def test_first_on_empty_list_raises_error(self, html_doc):
         root = html(html_doc)
         items = root.descendants("non-existent-tag")
-        with pytest.raises(XPathSelectionError, match="No elements in group"):
+        with pytest.raises(XPathSelectionError, match="No elements found in the list"):
             items.first()
 
     def test_last_on_empty_list_raises_error(self, html_doc):
         root = html(html_doc)
         items = root.descendants("non-existent-tag")
-        with pytest.raises(XPathError, match="No elements in group"):
+        with pytest.raises(XPathError, match="No elements found in the list"):
             items.last()
 
 
