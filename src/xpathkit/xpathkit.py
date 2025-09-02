@@ -175,9 +175,7 @@ class XPathElement:
         try:
             self._ele.remove(child._ele)
         except ValueError as e:
-            raise XPathModificationError(
-                "Element is not a child of this element"
-            ) from e
+            raise XPathModificationError("Element is not a child of this element") from e
 
     def clear(
         self,
@@ -242,9 +240,7 @@ class XPathElementList:
         if self.empty():
             raise XPathSelectionError("No elements in group")
         if self.len() != 1:
-            raise XPathSelectionError(
-                "Element list does not contain exactly one element"
-            )
+            raise XPathSelectionError("Element list does not contain exactly one element")
         return self._eles[0]
 
     def first(
@@ -307,9 +303,41 @@ def html(
         raise ValueError("Either content or path must be provided")
     if content and path:
         raise ValueError("Only one of content or path must be provided")
+
     if not content:
         with open(path, "rb") as f:
             content = f.read()
-    parser = lxml.etree.HTMLParser(encoding=encoding)
-    tree = lxml.etree.HTML(content, parser=parser)
-    return XPathElement(tree)
+
+    if isinstance(content, str):
+        content = content.encode(encoding)
+
+    try:
+        tree = lxml.etree.HTML(content)
+        return XPathElement(tree)
+    except lxml.etree.LxmlError as e:
+        raise XPathError(f"Failed to parse HTML content: {e}")
+
+
+def xml(
+    content: Optional[Union[str, bytes]] = None,
+    path: Optional[str] = None,
+    encoding: str = "utf-8",
+) -> XPathElement:
+    """Parse XML content and return the root XPathElement."""
+    if not content and not path:
+        raise ValueError("Either content or path must be provided")
+    if content and path:
+        raise ValueError("Only one of content or path must be provided")
+
+    if not content:
+        with open(path, "rb") as f:
+            content = f.read()
+
+    if isinstance(content, str):
+        content = content.encode(encoding)
+
+    try:
+        tree = lxml.etree.fromstring(content)
+        return XPathElement(tree)
+    except lxml.etree.LxmlError as e:
+        raise XPathError(f"Failed to parse XML content: {e}")
