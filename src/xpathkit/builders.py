@@ -172,6 +172,10 @@ class _elbuilder:
     def label(self) -> el:
         return el("label")
 
+    @property
+    def any(self) -> el:
+        return el("*")
+
     def __call__(
         self,
         tag: str,
