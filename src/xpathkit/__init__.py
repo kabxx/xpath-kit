@@ -1,7 +1,6 @@
 from .__version__ import (
     __author__,
     __author_email__,
-    __build__,
     __copyright__,
     __description__,
     __license__,
@@ -21,11 +20,11 @@ from .exceptions import (
     XPathSelectionError,
 )
 from .expressions import (
-    expr,
     attr,
     dot,
-    fun,
     ele,
+    expr,
+    fun,
 )
 from .xpathkit import (
     XPathElement,

@@ -4,7 +4,7 @@ import lxml
 import lxml.etree
 
 from .exceptions import XPathError, XPathModificationError, XPathSelectionError
-from .expressions import expr, ele, dot, fun
+from .expressions import dot, ele, expr, fun
 
 
 class XPathElement:
@@ -187,7 +187,9 @@ class XPathElement:
         try:
             self._ele.remove(child._ele)
         except ValueError as e:
-            raise XPathModificationError("Element is not a child of this element") from e
+            raise XPathModificationError(
+                "Element is not a child of this element"
+            ) from e
 
     def clear(
         self,
@@ -252,7 +254,9 @@ class XPathElementList:
         if self.empty():
             raise XPathSelectionError("No elements in group")
         if self.len() != 1:
-            raise XPathSelectionError("Element list does not contain exactly one element")
+            raise XPathSelectionError(
+                "Element list does not contain exactly one element"
+            )
         return self._eles[0]
 
     def first(

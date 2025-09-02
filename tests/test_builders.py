@@ -1,6 +1,7 @@
 import pytest
-from xpathkit.builders import E, A, F
-from xpathkit.expressions import ele, attr, fun, dot
+
+from xpathkit.builders import A, E, F
+from xpathkit.expressions import attr, dot, ele, fun
 
 
 @pytest.mark.parametrize(
@@ -174,7 +175,25 @@ def test_callable_for_custom_functions(args, name, expected):
     assert str(custom_func) == expected
 
 
-@pytest.mark.parametrize("func_name", ["string", "concat", "starts-with", "ends-with", "substring-before", "substring-after", "string-length", "translate", "boolean", "number", "sum", "floor", "ceiling", "round"])
+@pytest.mark.parametrize(
+    "func_name",
+    [
+        "string",
+        "concat",
+        "starts-with",
+        "ends-with",
+        "substring-before",
+        "substring-after",
+        "string-length",
+        "translate",
+        "boolean",
+        "number",
+        "sum",
+        "floor",
+        "ceiling",
+        "round",
+    ],
+)
 def test_various_other_functions(func_name):
     py_func_name = func_name.replace("-", "_")
     func_builder = getattr(F, py_func_name)

@@ -1,6 +1,5 @@
 import pytest
 
-
 from xpathkit import (
     A,
     E,
@@ -11,8 +10,8 @@ from xpathkit import (
     XPathSelectionError,
     attr,
     dot,
-    fun,
     ele,
+    fun,
     html,
 )
 
@@ -58,12 +57,27 @@ def html_doc():
         (ele("body") // "a", "body//a"),
         (ele("body") // ele("a"), "body//a"),
         (ele("div")[attr("id") == "main"], 'div[@id="main"]'),
-        (ele("li")[attr("class").any("item", "special")], 'li[(contains(@class,"item") or contains(@class,"special"))]'),
-        (ele("div")[attr("class").all("container", "main-content")], 'div[(contains(@class,"container") and contains(@class,"main-content"))]'),
-        (ele("li")[attr("class").none("disabled", "hidden")], 'li[(not(contains(@class,"disabled")) and not(contains(@class,"hidden")))]'),
+        (
+            ele("li")[attr("class").any("item", "special")],
+            'li[(contains(@class,"item") or contains(@class,"special"))]',
+        ),
+        (
+            ele("div")[attr("class").all("container", "main-content")],
+            'div[(contains(@class,"container") and contains(@class,"main-content"))]',
+        ),
+        (
+            ele("li")[attr("class").none("disabled", "hidden")],
+            'li[(not(contains(@class,"disabled")) and not(contains(@class,"hidden")))]',
+        ),
         (ele("a")[attr("href")], "a[@href]"),
-        (ele("a")[(attr("class") == "link") & (attr("href") == "/link1")], 'a[(@class="link" and @href="/link1")]'),
-        (ele("div")[(attr("id") == "main") | (attr("id") == "footer")], 'div[(@id="main" or @id="footer")]'),
+        (
+            ele("a")[(attr("class") == "link") & (attr("href") == "/link1")],
+            'a[(@class="link" and @href="/link1")]',
+        ),
+        (
+            ele("div")[(attr("id") == "main") | (attr("id") == "footer")],
+            'div[(@id="main" or @id="footer")]',
+        ),
         (ele("li")[1], "li[1]"),
         (ele("ul") / ele("li")[2], "ul/li[2]"),
         (ele("li")[-1], "li[last()]"),
@@ -71,9 +85,17 @@ def html_doc():
         (E.p[dot() == "Welcome"], 'p[.="Welcome"]'),
         (E.p[F.contains(dot(), "Footer")], 'p[contains(.,"Footer")]'),
         (E.li[F.string_length(dot()) > 5], "li[string-length(.)>5]"),
-        (E.li[F.not_(F.contains(A.class_, "disabled"))], 'li[not(contains(@class,"disabled"))]'),
+        (
+            E.li[F.not_(F.contains(A.class_, "disabled"))],
+            'li[not(contains(@class,"disabled"))]',
+        ),
         (ele("li")[attr("class").any("item")][1], 'li[(contains(@class,"item"))][1]'),
-        (ele("div")[attr("id") == "main"] // ele("li")[attr("class").all("item", "special")] / "span", 'div[@id="main"]//li[(contains(@class,"item") and contains(@class,"special"))]/span'),
+        (
+            ele("div")[attr("id") == "main"]
+            // ele("li")[attr("class").all("item", "special")]
+            / "span",
+            'div[@id="main"]//li[(contains(@class,"item") and contains(@class,"special"))]/span',
+        ),
     ],
 )
 def test_xpath_expression_building(expr, expected):
@@ -86,10 +108,16 @@ def test_xpath_expression_building(expr, expected):
         (E.div, "div"),
         (E.span, "span"),
         (E.a[A.href == "/home"], 'a[@href="/home"]'),
-        (E.ul / E.li[A.class_.any("item", "active")], 'ul/li[(contains(@class,"item") or contains(@class,"active"))]'),
+        (
+            E.ul / E.li[A.class_.any("item", "active")],
+            'ul/li[(contains(@class,"item") or contains(@class,"active"))]',
+        ),
         (E("custom")[A("data-id") == "123"], 'custom[@data-id="123"]'),
         (A.id == "main", '@id="main"'),
-        (A.class_.any("item", "active"), '(contains(@class,"item") or contains(@class,"active"))'),
+        (
+            A.class_.any("item", "active"),
+            '(contains(@class,"item") or contains(@class,"active"))',
+        ),
         (A("data-role") == "button", '@data-role="button"'),
         (A.class_, "@class"),
         (A.for_, "@for"),
@@ -105,7 +133,9 @@ def test_xpath_builders(expr, expected):
 
 
 def test_custom_tag_and_attr():
-    elmt = html('<root><foo data-x="1"/></root>').descendant(E("foo")[A("data-x") == "1"])
+    elmt = html('<root><foo data-x="1"/></root>').descendant(
+        E("foo")[A("data-x") == "1"]
+    )
     assert elmt.tag == "foo"
 
 
@@ -259,7 +289,9 @@ class TestElementList:
         assert "item active" in all_classes
         assert "item special" in all_classes
 
-        filtered_items = items.filter(lambda item: "active" in item["class"] or "special" in item["class"])
+        filtered_items = items.filter(
+            lambda item: "active" in item["class"] or "special" in item["class"]
+        )
         assert len(filtered_items) == 2
 
     def test_to_list(self, html_doc):
@@ -399,7 +431,10 @@ class TestDOMManipulation:
         (fun("count", A.id), "count(@id)"),
         (fun("contains", dot(), "foo"), 'contains(.,"foo")'),
         (fun("normalize-space", dot()), "normalize-space(.)"),
-        (fun("string-length", fun("normalize-space", dot())), "string-length(normalize-space(.))"),
+        (
+            fun("string-length", fun("normalize-space", dot())),
+            "string-length(normalize-space(.))",
+        ),
     ],
 )
 def test_fun_builder(expr, expected):

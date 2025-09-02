@@ -1,4 +1,4 @@
-from .expressions import ele, attr, dot, fun
+from .expressions import attr, dot, ele, fun
 
 
 class _elebuilder:

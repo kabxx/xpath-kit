@@ -1,17 +1,18 @@
 import pytest
+
+from xpathkit.exceptions import XPathEvaluationError
 from xpathkit.expressions import (
-    expr,
-    ele,
-    attr,
-    dot,
-    fun,
-    _any_to_xpath_str,
+    _any,
     _any_to_expr,
+    _any_to_xpath_str,
     _index,
     _str,
-    _any,
+    attr,
+    dot,
+    ele,
+    expr,
+    fun,
 )
-from xpathkit.exceptions import XPathEvaluationError
 
 
 @pytest.mark.parametrize(
@@ -149,9 +150,18 @@ def test_attr_string_methods(expr, expected):
 @pytest.mark.parametrize(
     "expr,expected",
     [
-        (attr("class").all("item", "active"), '(contains(@class,"item") and contains(@class,"active"))'),
-        (attr("class").any("item", "active"), '(contains(@class,"item") or contains(@class,"active"))'),
-        (attr("class").none("disabled", "hidden"), '(not(contains(@class,"disabled")) and not(contains(@class,"hidden")))'),
+        (
+            attr("class").all("item", "active"),
+            '(contains(@class,"item") and contains(@class,"active"))',
+        ),
+        (
+            attr("class").any("item", "active"),
+            '(contains(@class,"item") or contains(@class,"active"))',
+        ),
+        (
+            attr("class").none("disabled", "hidden"),
+            '(not(contains(@class,"disabled")) and not(contains(@class,"hidden")))',
+        ),
     ],
 )
 def test_attr_multi_value_methods(expr, expected):
@@ -272,13 +282,19 @@ class TestIntegration:
 
     def test_complex_path_with_predicates(self):
         # //div[@id="main"]/ul/li[contains(@class, "active")]
-        query = ele("div")[attr("id") == "main"] / "ul" / ele("li")[attr("class").contains("active")]
+        query = (
+            ele("div")[attr("id") == "main"]
+            / "ul"
+            / ele("li")[attr("class").contains("active")]
+        )
         expected = 'div[@id="main"]/ul/li[contains(@class,"active")]'
         assert str(query) == expected
 
     def test_descendant_with_multiple_conditions(self):
         # //a[(contains(@href, "example.com")) and (not(@target))]
-        query = ele("a")[(attr("href").contains("example.com")) & fun("not", attr("target"))]
+        query = ele("a")[
+            (attr("href").contains("example.com")) & fun("not", attr("target"))
+        ]
         expected = 'a[(contains(@href,"example.com") and not(@target))]'
         assert str(query) == expected
 
@@ -303,6 +319,12 @@ class TestIntegration:
 
     def test_complex_class_selection(self):
         # //div[ (contains(@class,"widget") and not(contains(@class,"disabled"))) or @id="fallback" ]
-        query = ele("div")[(attr("class").contains("widget") & fun("not", attr("class").contains("disabled"))) | (attr("id") == "fallback")]
+        query = ele("div")[
+            (
+                attr("class").contains("widget")
+                & fun("not", attr("class").contains("disabled"))
+            )
+            | (attr("id") == "fallback")
+        ]
         expected = 'div[((contains(@class,"widget") and not(contains(@class,"disabled"))) or @id="fallback")]'
         assert str(query) == expected
