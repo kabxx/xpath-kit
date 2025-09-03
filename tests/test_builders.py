@@ -48,7 +48,7 @@ def test_special_element_properties(special, expected):
     ],
 )
 def test_callable_for_custom_tags(custom, expected):
-    custom_el = E(custom)
+    custom_el = E[custom]
     assert isinstance(custom_el, ele)
     assert str(custom_el) == expected
 
@@ -100,7 +100,7 @@ def test_keyword_attribute_properties(kw, expected):
     ],
 )
 def test_callable_for_custom_attributes(custom, expected):
-    custom_attr = A(custom)
+    custom_attr = A[custom]
     assert isinstance(custom_attr, attr)
     assert str(custom_attr) == expected
 
@@ -170,7 +170,7 @@ def test_nested_function_calls():
     ],
 )
 def test_callable_for_custom_functions(args, name, expected):
-    custom_func = F(*args, name=name)
+    custom_func = F[name](*args)
     assert isinstance(custom_func, fun)
     assert str(custom_func) == expected
 

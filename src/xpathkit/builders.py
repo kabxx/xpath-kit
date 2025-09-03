@@ -1,11 +1,13 @@
+from typing import Any, Callable
+
 from .expressions import attr, dot, ele, fun
 
 
 class _elebuilder:
     """
     A convenient builder for common HTML element XPath expressions.
-    Provides properties for standard tags (div, span, ul, etc.) and supports custom tags via __call__.
-    Example: E.div / E.span, E("custom")
+    Provides properties for standard tags (div, span, ul, etc.) and supports custom tags via __getitem__.
+    Example: E.div / E.span, E["custom"]
     """
 
     @property
@@ -184,19 +186,19 @@ class _elebuilder:
     def any(self) -> ele:
         return ele("*")
 
-    def __call__(
+    def __getitem__(
         self,
         tag: str,
     ) -> ele:
-        """Initialize an element for XPath expressions."""
+        """Get a custom element."""
         return ele(tag)
 
 
 class _attrbuilder:
     """
     A convenient builder for common HTML attribute XPath expressions.
-    Provides properties for standard attributes (id, class, href, etc.) and supports custom attributes via __call__.
-    Example: A.id == "main", A("data-id") == "123"
+    Provides properties for standard attributes (id, class, href, etc.) and supports custom attributes via __getitem__.
+    Example: A.id == "main", A["data-id"] == "123"
     """
 
     @property
@@ -291,18 +293,18 @@ class _attrbuilder:
     def rowspan(self) -> attr:
         return attr("rowspan")
 
-    def __call__(
+    def __getitem__(
         self,
         name: str,
     ) -> attr:
-        """Initialize a custom attribute for XPath expressions."""
+        """Get a custom attribute."""
         return attr(name)
 
 
 class _funcbuilder:
     """
     A builder for common XPath function calls.
-    Provides methods for standard XPath functions and supports custom functions via __call__.
+    Provides methods for standard XPath functions and supports custom functions via __getitem__.
     """
 
     def position(self, *args):
@@ -413,13 +415,17 @@ class _funcbuilder:
     def avg(self, *args):
         return fun("avg", *args)
 
-    def __call__(
+    def __getitem__(
         self,
-        *args,
         name: str,
-    ):
-        """Initialize a function call for XPath expressions."""
-        return fun(name, *args)
+    ) -> Callable[..., fun]:
+        """Get a callable for a custom function."""
+
+        def wrapper(*args: Any) -> fun:
+            """Wrap the function call."""
+            return fun(name, *args)
+
+        return wrapper
 
 
 E = _elebuilder()

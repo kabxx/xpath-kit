@@ -113,13 +113,13 @@ def test_xpath_expression_building(expr, expected):
             E.ul / E.li[A.class_.any("item", "active")],
             'ul/li[(contains(@class,"item") or contains(@class,"active"))]',
         ),
-        (E("custom")[A("data-id") == "123"], 'custom[@data-id="123"]'),
+        (E["custom"][A["data-id"] == "123"], 'custom[@data-id="123"]'),
         (A.id == "main", '@id="main"'),
         (
             A.class_.any("item", "active"),
             '(contains(@class,"item") or contains(@class,"active"))',
         ),
-        (A("data-role") == "button", '@data-role="button"'),
+        (A["data-role"] == "button", '@data-role="button"'),
         (A.class_, "@class"),
         (A.for_, "@for"),
         (F.last(), "last()"),
@@ -135,7 +135,7 @@ def test_xpath_builders(expr, expected):
 
 def test_custom_tag_and_attr():
     elmt = html('<root><foo data-x="1"/></root>').descendant(
-        E("foo")[A("data-x") == "1"]
+        E["foo"][A["data-x"] == "1"]
     )
     assert elmt.tag == "foo"
 

@@ -8,7 +8,7 @@
 
 Say goodbye to messy, hard-to-read XPath strings:
 
-`//div[@id="main" and contains(@class, "content")]/ul/li[position()=1]`
+`div[@id="main" and contains(@class, "content")]/ul/li[position()=1]`
 
 And say hello to a more intuitive and IDE-friendly way of writing queries:
 
@@ -119,9 +119,9 @@ root_xml = xml(path="data.xml")
 
 These are the heart of `xpath-kit`, making expression building effortless.
 
--   **`E` (Element)**: Builds element nodes. E.g., `E.div`, `E.a`, or custom tags `E("my-tag")`.
--   **`A` (Attribute)**: Builds attribute nodes within predicates. E.g., `A.id`, `A.href`, or custom attributes `A("data-id")`.
--   **`F` (Function)**: Builds XPath functions. E.g., `F.contains()`, `F.not_()`, `F.position()`.
+-   **`E` (Element)**: Builds element nodes. E.g., `E.div`, `E.a`, or custom tags `E["my-tag"]`.
+-   **`A` (Attribute)**: Builds attribute nodes within predicates. E.g., `A.id`, `A.href`, or custom attributes `A["data-id"]`.
+-   **`F` (Function)**: Builds XPath functions. E.g., `F.contains()`, `F.not_()`, `F.position()`, or any custom function: `F["name"](arg1, ...)`.
 
 *Note*: Since `class` and `for` are reserved keywords in Python, use a trailing underscore: `A.class_` and `A.for_`.
 
@@ -141,6 +141,15 @@ query_child = E.div / E.p
 # XPath: body//a
 query_descendant = E.body // E.a
 ```
+
+You can also use a string directly after an element for simple cases:
+
+```python
+# Equivalent to E.div / E.span
+query = E.div / "span"
+```
+
+This is convenient for simple queries without predicates or attributes.
 
 ### 4. Predicates (`[]`)
 
@@ -225,7 +234,7 @@ query_last = E.li[-1]
 ### 5. Working with Results
 
 -   `.child()`/`.descendant()` return a single `XPathElement`.
--   `.children()`/`.descendants()` return an `XPathElementList`.
+-   `.children()`/`.descendants()` return an `Union[XPathElementList, str, float, bool, List[str]]`.
 
 #### `XPathElement` (Single Result)
 
