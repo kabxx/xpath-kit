@@ -24,3 +24,6 @@ classifiers = [
 [tool.isort]
 profile = "black"
 src_paths = ["src/xpathkit", "tests"]
+
+[project.optional-dependencies]
+test = ["pytest"]
