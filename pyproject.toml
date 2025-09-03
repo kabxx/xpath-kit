@@ -9,7 +9,7 @@ description = "A toolkit for convenient and expressive XPath operations based on
 authors = [{ name = "Kabxx", email = "2201174299@qq.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = ["lxml>=6.0.0"]
 keywords = ["xpath", "lxml", "xml", "html", "parser"]
 classifiers = [
