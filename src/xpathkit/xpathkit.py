@@ -108,6 +108,20 @@ class XPathElement:
             raise XPathSelectionError("XPath expression did not return any elements.")
         return children.one()
 
+    def has_single_child(
+        self,
+        element: Union[str, ele],
+    ) -> bool:
+        """Return true if there is at least one direct child matching the given tag or XPath expression."""
+        return self.children(element).len() == 1
+
+    def has_any_child(
+        self,
+        element: Union[str, ele],
+    ) -> bool:
+        """Return true if there is at least one direct child matching the given tag or XPath expression."""
+        return self.children(element).len() > 0
+
     def descendants(
         self,
         element: Union[str, ele],
@@ -129,6 +143,20 @@ class XPathElement:
         if not isinstance(descendants, XPathElementList):
             raise XPathSelectionError("XPath expression did not return any elements.")
         return descendants.one()
+
+    def has_single_descendant(
+        self,
+        element: Union[str, ele],
+    ) -> bool:
+        """Return true if there is exactly one descendant matching the given tag or XPath expression."""
+        return self.descendants(element).len() == 1
+
+    def has_any_descendant(
+        self,
+        element: Union[str, ele],
+    ) -> bool:
+        """Return true if there is at least one descendant matching the given tag or XPath expression."""
+        return self.descendants(element).len() > 0
 
     def xpath(
         self,

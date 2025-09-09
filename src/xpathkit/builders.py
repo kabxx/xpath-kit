@@ -187,8 +187,8 @@ class _elebuilder:
         return ele("label")
 
     @property
-    def dbi(self) -> ele:
-        return ele("dbi")
+    def bdi(self) -> ele:
+        return ele("bdi")
 
     @property
     def ins(self) -> ele:
