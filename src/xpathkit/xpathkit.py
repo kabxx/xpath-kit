@@ -89,11 +89,14 @@ class XPathElement:
     def children(
         self,
         element: Union[str, ele],
-    ) -> Union["XPathElementList", str, float, bool, List[str]]:
+    ) -> "XPathElementList":
         """Return all direct children matching the given tag or XPath expression."""
         if isinstance(element, str):
             element = ele(element)
-        return self.xpath(f"./{element}")
+        children = self.xpath(f"./{element}")
+        if not isinstance(children, XPathElementList):
+            raise XPathSelectionError("XPath expression did not return any elements.")
+        return children
 
     def child(
         self,
@@ -108,11 +111,14 @@ class XPathElement:
     def descendants(
         self,
         element: Union[str, ele],
-    ) -> Union["XPathElementList", str, float, bool, List[str]]:
+    ) -> "XPathElementList":
         """Return all descendants matching the given tag or XPath expression."""
         if isinstance(element, str):
             element = ele(element)
-        return self.xpath(f".//{element}")
+        descendants = self.xpath(f".//{element}")
+        if not isinstance(descendants, XPathElementList):
+            raise XPathSelectionError("XPath expression did not return any elements.")
+        return descendants
 
     def descendant(
         self,
@@ -197,9 +203,7 @@ class XPathElement:
         try:
             self._ele.remove(child._ele)
         except ValueError as e:
-            raise XPathModificationError(
-                "The element to be removed is not a child of this element."
-            ) from e
+            raise XPathModificationError("The element to be removed is not a child of this element.") from e
 
     def clear(
         self,
@@ -272,9 +276,7 @@ class XPathElementList:
         if self.empty():
             raise XPathSelectionError("No elements found in the list.")
         if self.len() != 1:
-            raise XPathSelectionError(
-                "Element list does not contain exactly one element."
-            )
+            raise XPathSelectionError("Element list does not contain exactly one element.")
         return self._eles[0]
 
     def first(
@@ -301,9 +303,7 @@ class XPathElementList:
         if isinstance(key, int):
             return self._eles[key]
         elif isinstance(key, slice):
-            return XPathElementList(
-                [e.raw() for e in self._eles[key.start : key.stop : key.step]]
-            )
+            return XPathElementList([e.raw() for e in self._eles[key.start : key.stop : key.step]])
         else:
             raise TypeError
 

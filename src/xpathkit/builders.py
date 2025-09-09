@@ -19,6 +19,10 @@ class _elebuilder:
         return ele("..")
 
     @property
+    def any(self) -> ele:
+        return ele("*")
+
+    @property
     def html(self) -> ele:
         return ele("html")
 
@@ -183,8 +187,16 @@ class _elebuilder:
         return ele("label")
 
     @property
-    def any(self) -> ele:
-        return ele("*")
+    def dbi(self) -> ele:
+        return ele("dbi")
+
+    @property
+    def ins(self) -> ele:
+        return ele("ins")
+
+    @property
+    def del_(self) -> ele:
+        return ele("del")
 
     def __getitem__(
         self,
