@@ -410,7 +410,7 @@ def xml(
         content = content.encode(encoding)
 
     try:
-        tree = lxml.etree.fromstring(content)
+        tree = lxml.etree.XML(content)
         return XPathElement(tree)
     except lxml.etree.LxmlError as e:
         raise XPathError(f"Failed to parse XML content: {e}")
