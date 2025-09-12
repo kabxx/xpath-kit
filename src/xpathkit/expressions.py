@@ -238,19 +238,25 @@ class _cond(_bool):
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(f"starts-with({self._key},{expr._any_to_str_in_expr(value)})")
+        return self._add_cond(
+            f"starts-with({self._key},{expr._any_to_str_in_expr(value)})"
+        )
 
     def ends_with(
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(f"ends-with({self._key},{expr._any_to_str_in_expr(value)})")
+        return self._add_cond(
+            f"ends-with({self._key},{expr._any_to_str_in_expr(value)})"
+        )
 
     def contains(
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(f"contains({self._key},{expr._any_to_str_in_expr(value)})")
+        return self._add_cond(
+            f"contains({self._key},{expr._any_to_str_in_expr(value)})"
+        )
 
     def all(
         self,
@@ -259,7 +265,10 @@ class _cond(_bool):
         """Match all values in the list."""
         return self._add_cond(
             self._and_join(
-                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
+                *[
+                    f"contains({self._key},{expr._any_to_str_in_expr(v)})"
+                    for v in values
+                ],
             ),
         )
 
@@ -270,7 +279,10 @@ class _cond(_bool):
         """Match any value in the list."""
         return self._add_cond(
             self._or_join(
-                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
+                *[
+                    f"contains({self._key},{expr._any_to_str_in_expr(v)})"
+                    for v in values
+                ],
             ),
         )
 
@@ -281,7 +293,10 @@ class _cond(_bool):
         """Match no values in the list."""
         return self._add_cond(
             self._and_join(
-                *[f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))" for v in values],
+                *[
+                    f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))"
+                    for v in values
+                ],
             ),
         )
 
@@ -478,7 +493,9 @@ class ele(expr):
     ) -> "ele":
         """Add a direct child element to this element node."""
         if isinstance(other, dot):
-            raise XPathEvaluationError("dot() is not allowed as a descendant element. Because it represents the current context node.")
+            raise XPathEvaluationError(
+                "dot() is not allowed as a descendant element. Because it represents the current context node."
+            )
         return self._add_other(
             conn="/",
             other=ele._any_to_expr_in_ele(other),
@@ -490,7 +507,9 @@ class ele(expr):
     ) -> "ele":
         """Add a descendant element to this element node."""
         if isinstance(other, dot):
-            raise XPathEvaluationError("dot() is not allowed as a descendant element. Because it represents the current context node.")
+            raise XPathEvaluationError(
+                "dot() is not allowed as a descendant element. Because it represents the current context node."
+            )
         return self._add_other(
             conn="//",
             other=ele._any_to_expr_in_ele(other),
