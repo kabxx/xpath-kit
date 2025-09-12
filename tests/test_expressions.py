@@ -80,7 +80,7 @@ def test_index_node(val, expected):
 
 def test_index_zero_raises():
     with pytest.raises(XPathEvaluationError):
-        _index(0).part()
+        _index(0)._compile_self()
 
 
 @pytest.mark.parametrize(
@@ -282,19 +282,13 @@ class TestIntegration:
 
     def test_complex_path_with_predicates(self):
         # //div[@id="main"]/ul/li[contains(@class, "active")]
-        query = (
-            ele("div")[attr("id") == "main"]
-            / "ul"
-            / ele("li")[attr("class").contains("active")]
-        )
+        query = ele("div")[attr("id") == "main"] / "ul" / ele("li")[attr("class").contains("active")]
         expected = 'div[@id="main"]/ul/li[contains(@class,"active")]'
         assert str(query) == expected
 
     def test_descendant_with_multiple_conditions(self):
         # //a[(contains(@href, "example.com")) and (not(@target))]
-        query = ele("a")[
-            (attr("href").contains("example.com")) & fun("not", attr("target"))
-        ]
+        query = ele("a")[(attr("href").contains("example.com")) & fun("not", attr("target"))]
         expected = 'a[(contains(@href,"example.com") and not(@target))]'
         assert str(query) == expected
 
@@ -319,12 +313,6 @@ class TestIntegration:
 
     def test_complex_class_selection(self):
         # //div[ (contains(@class,"widget") and not(contains(@class,"disabled"))) or @id="fallback" ]
-        query = ele("div")[
-            (
-                attr("class").contains("widget")
-                & fun("not", attr("class").contains("disabled"))
-            )
-            | (attr("id") == "fallback")
-        ]
+        query = ele("div")[(attr("class").contains("widget") & fun("not", attr("class").contains("disabled"))) | (attr("id") == "fallback")]
         expected = 'div[((contains(@class,"widget") and not(contains(@class,"disabled"))) or @id="fallback")]'
         assert str(query) == expected

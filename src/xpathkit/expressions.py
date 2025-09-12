@@ -15,15 +15,15 @@ class expr:
 
     def __str__(self):
         """Return the full XPath string representation of the node."""
-        return self.full()
+        return self.compile()
 
-    def part(
+    def _compile_self(
         self,
     ) -> str:
         """Return the partial XPath string for this node."""
         raise NotImplementedError
 
-    def full(
+    def compile(
         self,
     ) -> str:
         """Return the full XPath string for this node."""
@@ -37,7 +37,7 @@ class expr:
         if isinstance(val, str):
             return f'"{val}"'
         elif isinstance(val, expr):
-            return val.full()
+            return val.compile()
         else:
             return _any_to_xpath_str(val)
 
@@ -52,15 +52,15 @@ class _atom(expr):
         """Initialize an atomic node for XPath expressions."""
         super().__init__(**kwargs)
 
-    def part(
+    def _compile_self(
         self,
     ) -> str:
         raise NotImplementedError
 
-    def full(
+    def compile(
         self,
     ) -> str:
-        return self.part()
+        return self._compile_self()
 
 
 class _any(_atom):
@@ -76,7 +76,7 @@ class _any(_atom):
         super().__init__(**kwargs)
 
     @override
-    def part(
+    def _compile_self(
         self,
     ) -> str:
         return _any_to_xpath_str(self._value)
@@ -95,7 +95,7 @@ class _str(_atom):
         super().__init__(**kwargs)
 
     @override
-    def part(
+    def _compile_self(
         self,
     ) -> str:
         return self._value
@@ -114,7 +114,7 @@ class _index(_atom):
         super().__init__(**kwargs)
 
     @override
-    def part(
+    def _compile_self(
         self,
     ) -> str:
         if self._value < 0:
@@ -163,12 +163,12 @@ class _bool(expr):
         return self._add_other("or", other)
 
     @override
-    def full(
+    def compile(
         self,
     ) -> str:
-        ret = self.part()
+        ret = self._compile_self()
         for conn, other in self._others:
-            ret = f"({ret} {conn} {other.full()})"
+            ret = f"({ret} {conn} {other.compile()})"
         return ret
 
 
@@ -238,25 +238,19 @@ class _cond(_bool):
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(
-            f"starts-with({self._key},{expr._any_to_str_in_expr(value)})"
-        )
+        return self._add_cond(f"starts-with({self._key},{expr._any_to_str_in_expr(value)})")
 
     def ends_with(
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(
-            f"ends-with({self._key},{expr._any_to_str_in_expr(value)})"
-        )
+        return self._add_cond(f"ends-with({self._key},{expr._any_to_str_in_expr(value)})")
 
     def contains(
         self,
         value: Any,
     ) -> "_cond":
-        return self._add_cond(
-            f"contains({self._key},{expr._any_to_str_in_expr(value)})"
-        )
+        return self._add_cond(f"contains({self._key},{expr._any_to_str_in_expr(value)})")
 
     def all(
         self,
@@ -265,10 +259,7 @@ class _cond(_bool):
         """Match all values in the list."""
         return self._add_cond(
             self._and_join(
-                *[
-                    f"contains({self._key},{expr._any_to_str_in_expr(v)})"
-                    for v in values
-                ],
+                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
             ),
         )
 
@@ -279,10 +270,7 @@ class _cond(_bool):
         """Match any value in the list."""
         return self._add_cond(
             self._or_join(
-                *[
-                    f"contains({self._key},{expr._any_to_str_in_expr(v)})"
-                    for v in values
-                ],
+                *[f"contains({self._key},{expr._any_to_str_in_expr(v)})" for v in values],
             ),
         )
 
@@ -293,10 +281,7 @@ class _cond(_bool):
         """Match no values in the list."""
         return self._add_cond(
             self._and_join(
-                *[
-                    f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))"
-                    for v in values
-                ],
+                *[f"not(contains({self._key},{expr._any_to_str_in_expr(v)}))" for v in values],
             ),
         )
 
@@ -337,7 +322,7 @@ class _cond(_bool):
         return self.le(value)
 
     @override
-    def part(
+    def _compile_self(
         self,
     ) -> str:
         if not self._conds:
@@ -351,13 +336,13 @@ class _cond(_bool):
         return ret
 
     @override
-    def full(
+    def compile(
         self,
     ) -> str:
         """Return the full predicate string, including all combined predicates."""
-        ret = self.part()
+        ret = self._compile_self()
         for conn, other in self._others:
-            ret = f"({ret} {conn} {other.full()})"
+            ret = f"({ret} {conn} {other.compile()})"
         return ret
 
     @staticmethod
@@ -368,7 +353,7 @@ class _cond(_bool):
         if isinstance(arg, str):
             return f'"{arg}"'
         elif isinstance(arg, _cond):
-            return arg.full()
+            return arg.compile()
         else:
             return _any_to_xpath_str(arg)
 
@@ -493,9 +478,7 @@ class ele(expr):
     ) -> "ele":
         """Add a direct child element to this element node."""
         if isinstance(other, dot):
-            raise XPathEvaluationError(
-                "dot() is not allowed as a descendant element. Because it represents the current context node."
-            )
+            raise XPathEvaluationError("dot() is not allowed as a descendant element. Because it represents the current context node.")
         return self._add_other(
             conn="/",
             other=ele._any_to_expr_in_ele(other),
@@ -507,32 +490,30 @@ class ele(expr):
     ) -> "ele":
         """Add a descendant element to this element node."""
         if isinstance(other, dot):
-            raise XPathEvaluationError(
-                "dot() is not allowed as a descendant element. Because it represents the current context node."
-            )
+            raise XPathEvaluationError("dot() is not allowed as a descendant element. Because it represents the current context node.")
         return self._add_other(
             conn="//",
             other=ele._any_to_expr_in_ele(other),
         )
 
     @override
-    def part(
+    def _compile_self(
         self,
     ) -> str:
         ret = self._name
         if self._axis is not None:
             ret = f"{self._axis}::{ret}"
         for expr in self._exprs:
-            ret = f"{ret}[{expr.full()}]"
+            ret = f"{ret}[{expr.compile()}]"
         return ret
 
     @override
-    def full(
+    def compile(
         self,
     ) -> str:
-        ret = self.part()
+        ret = self._compile_self()
         for conn, other in self._others:
-            ret += f"{conn}{other.full()}"
+            ret += f"{conn}{other.compile()}"
         return ret
 
     @staticmethod

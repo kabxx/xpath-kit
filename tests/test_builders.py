@@ -76,7 +76,7 @@ def test_callable_for_custom_tags(custom, expected):
 def test_common_attribute_properties(prop_name, expected_attr):
     attr_expr = getattr(A, prop_name)
     assert isinstance(attr_expr, attr)
-    assert attr_expr.part() == expected_attr
+    assert attr_expr._compile_self() == expected_attr
 
 
 @pytest.mark.parametrize(
