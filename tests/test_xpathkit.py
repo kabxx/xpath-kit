@@ -240,7 +240,8 @@ class TestElementQueries:
         root = html(html_doc)
         div = root.descendant(ele("body") / "div")
 
-        assert div["not-exist"] is None
+        with pytest.raises(KeyError):
+            div["not-exist"]
 
         div["data-new"] = "abc"
         assert div["data-new"] == "abc"

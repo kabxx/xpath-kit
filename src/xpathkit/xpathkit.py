@@ -212,10 +212,28 @@ class XPathElement:
         self,
         key: str,
     ) -> Optional[str]:
-        """Get the value of the given attribute, or None if not present."""
+        """Get the value of the given attribute, or raise if not present."""
+        if key not in self._ele.attrib:
+            raise KeyError(f"Attribute '{key}' not found in element '{self.tag}'.")
         return self._ele.attrib.get(key)
 
+    def get(
+        self,
+        key: str,
+        default: Optional[str] = None,
+    ) -> Optional[str]:
+        """Get the value of the given attribute, or default if not present."""
+        return self._ele.attrib.get(key, default)
+
     def __setitem__(
+        self,
+        key: str,
+        val: str,
+    ) -> None:
+        """Set the value of the given attribute."""
+        self._ele.attrib[key] = val
+
+    def set(
         self,
         key: str,
         val: str,
