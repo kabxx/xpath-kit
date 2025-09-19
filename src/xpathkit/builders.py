@@ -198,6 +198,10 @@ class _elebuilder:
     def del_(self) -> ele:
         return ele("del")
 
+    @property
+    def script(self) -> ele:
+        return ele("script")
+
     def __getitem__(
         self,
         tag: str,

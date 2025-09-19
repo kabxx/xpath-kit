@@ -157,7 +157,7 @@ class TestElementQueries:
         html_str = "<div>foo<span>bar</span></div>"
         root = html(html_str)
         div = root.descendant(E.div)
-        assert div.text() == ["foo"]
+        assert div.texts() == ["foo"]
         assert "foobar" in div.string()
 
     def test_xpathelementlist_methods(self, html_doc):
@@ -200,7 +200,7 @@ class TestElementQueries:
         cleaned_string = " ".join(special_li.string().split())
         assert cleaned_string == "Item 3 - nested"
 
-        direct_texts = [t.strip() for t in special_li.text() if t.strip()]
+        direct_texts = [t.strip() for t in special_li.texts() if t.strip()]
         assert direct_texts == ["Item 3"]
 
         query = E.li[F.normalize_space(dot()) == "Item 3 - nested"]

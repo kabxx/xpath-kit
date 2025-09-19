@@ -76,6 +76,12 @@ class XPathElement:
 
     def text(
         self,
+    ) -> str:
+        """Return the text content of this element (not including descendants)."""
+        return "\n".join(self.texts()).strip()
+
+    def texts(
+        self,
     ) -> List[str]:
         """Return a list of direct text nodes under this element (not including descendants)."""
         return self.xpath(ele(".") / fun("text"))
