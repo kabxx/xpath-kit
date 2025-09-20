@@ -1,5 +1,6 @@
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Union
 
+import re
 import lxml
 import lxml.etree
 
@@ -212,6 +213,13 @@ class XPathElement:
         key: str,
     ) -> bool:
         """Check if the element has the given attribute."""
+        return self.has_attr(key=key)
+
+    def has_attr(
+        self,
+        key: str,
+    ) -> bool:
+        """Check if the element has the given attribute."""
         return key in self._ele.attrib
 
     def __getitem__(
@@ -223,13 +231,31 @@ class XPathElement:
             raise KeyError(f"Attribute '{key}' not found in element '{self.tag}'.")
         return self._ele.attrib.get(key)
 
-    def get(
+    def get_attr(
         self,
         key: str,
         default: Optional[str] = None,
     ) -> Optional[str]:
         """Get the value of the given attribute, or default if not present."""
         return self._ele.attrib.get(key, default)
+
+    def get_attr_set(
+        self,
+        key: str,
+    ) -> Optional[Set[str]]:
+        """Get the set of values for the given attribute."""
+        if key not in self._ele.attrib:
+            return None
+        return set([v for v in re.split(r"\s+", self._ele.attrib.get(key).strip()) if v])
+
+    def get_attr_list(
+        self,
+        key: str,
+    ) -> Optional[List[str]]:
+        """Get the list of values for the given attribute."""
+        if key not in self._ele.attrib:
+            return None
+        return [v for v in re.split(r"\s+", self._ele.attrib.get(key).strip()) if v]
 
     def __setitem__(
         self,
@@ -239,13 +265,21 @@ class XPathElement:
         """Set the value of the given attribute."""
         self._ele.attrib[key] = val
 
-    def set(
+    def set_attr(
         self,
         key: str,
         val: str,
     ) -> None:
         """Set the value of the given attribute."""
         self._ele.attrib[key] = val
+
+    def set_attr_iterable(
+        self,
+        key: str,
+        vals: Iterable[str],
+    ) -> None:
+        """Set the values of the given attribute."""
+        self._ele.attrib[key] = " ".join([v.strip() for v in vals if v.strip()])
 
     def remove(
         self,
@@ -255,9 +289,7 @@ class XPathElement:
         try:
             self._ele.remove(child._ele)
         except ValueError as e:
-            raise XPathModificationError(
-                "The element to be removed is not a child of this element."
-            ) from e
+            raise XPathModificationError("The element to be removed is not a child of this element.") from e
 
     def clear(
         self,
@@ -330,9 +362,7 @@ class XPathElementList:
         if self.empty():
             raise XPathSelectionError("No elements found in the list.")
         if self.len() != 1:
-            raise XPathSelectionError(
-                "Element list does not contain exactly one element."
-            )
+            raise XPathSelectionError("Element list does not contain exactly one element.")
         return self._eles[0]
 
     def first(
@@ -359,9 +389,7 @@ class XPathElementList:
         if isinstance(key, int):
             return self._eles[key]
         elif isinstance(key, slice):
-            return XPathElementList(
-                [e.raw() for e in self._eles[key.start : key.stop : key.step]]
-            )
+            return XPathElementList([e.raw() for e in self._eles[key.start : key.stop : key.step]])
         else:
             raise TypeError
 
