@@ -31,7 +31,8 @@ def test_common_element_properties(prop_name, expected_tag):
     [
         ("any", "*"),
         ("parent", ".."),
-        ("root", "."),
+        ("root", ""),
+        ("curr", "."),
     ],
 )
 def test_special_element_properties(special, expected):
