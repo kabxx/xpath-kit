@@ -12,6 +12,10 @@ class _elebuilder:
 
     @property
     def root(self) -> ele:
+        return ele("")
+
+    @property
+    def curr(self) -> ele:
         return ele(".")
 
     @property
@@ -201,6 +205,10 @@ class _elebuilder:
     @property
     def script(self) -> ele:
         return ele("script")
+
+    @property
+    def noscript(self) -> ele:
+        return ele("noscript")
 
     def __getitem__(
         self,
