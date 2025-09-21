@@ -249,6 +249,54 @@ class TestElementQueries:
         assert "data-new" in div
         assert "not-exist" not in div
 
+    def test_find_child_and_descendant(self, html_doc):
+        root = html(html_doc)
+        main_div = root.descendant(ele("div")[attr("id") == "main"])
+        # find_child
+        h1 = main_div.child_or_none("h1")
+        assert h1 is not None and h1.tag == "h1"
+        # find_descendant
+        link = main_div.descendant_or_none(ele("a")[attr("href") == "/link1"])
+        assert link is not None and link.tag == "a"
+
+    def test_has_single_and_any_child_descendant(self, html_doc):
+        root = html(html_doc)
+        main_div = root.descendant(ele("div")[attr("id") == "main"])
+        assert main_div.has_single_child("h1")
+        assert main_div.has_single_child("p")
+        assert main_div.has_any_child("h1")
+        assert not main_div.has_any_child("table")
+        assert main_div.has_single_descendant("h1")
+        assert not main_div.has_single_descendant("li")
+        assert main_div.has_any_descendant("a")
+        assert not main_div.has_any_descendant("table")
+
+    def test_get_attr_and_has_attr(self, html_doc):
+        root = html(html_doc)
+        main_div = root.descendant(ele("div")[attr("id") == "main"])
+        assert main_div.has_attr("id")
+        assert main_div.get_attr("id") == "main"
+        assert main_div.get_attr("not_exist") is None
+        assert main_div.get_attr("not_exist", "default") == "default"
+
+    def test_get_attr_list_and_set(self, html_doc):
+        root = html(html_doc)
+        main_div = root.descendant(ele("div")[attr("id") == "main"])
+        li = main_div.child("ul").children("li")[0]
+        p = main_div.child("p")
+        assert li.get_attr_list("class") == ["item", "active"]
+        assert li.get_attr_set("class") == {"item", "active"}
+        assert p.get_attr_list("class") == None
+        assert p.get_attr_set("class") == None
+
+    def test_set_attr_and_set_attr_iterable(self, html_doc):
+        root = html(html_doc)
+        main_div = root.descendant(ele("div")[attr("id") == "main"])
+        main_div.set_attr("data-x", "abc")
+        assert main_div.get_attr("data-x") == "abc"
+        main_div.set_attr_iterable("class", ["foo", "bar", "baz"])
+        assert set(main_div.get_attr_list("class")) == {"foo", "bar", "baz"}
+
 
 class TestElementList:
     """Test the functionality of XPathElementList objects"""
@@ -400,8 +448,8 @@ class TestDOMManipulation:
         link["class"] = "link updated"
         link["data-id"] = "123"
 
-        assert "updated" in link.tostring()
-        assert 'data-id="123"' in link.tostring()
+        assert "updated" in link.serialize()
+        assert 'data-id="123"' in link.serialize()
 
     def test_insert_and_clear(self, html_doc):
         root = html(html_doc)

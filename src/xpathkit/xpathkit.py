@@ -1,6 +1,6 @@
+import re
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Union
 
-import re
 import lxml
 import lxml.etree
 
@@ -66,7 +66,7 @@ class XPathElement:
         """Return the start tag string of the element (e.g. <tag ...>)."""
         return self.start
 
-    def tostring(
+    def serialize(
         self,
     ) -> str:
         """Return the full XML serialization of the element as a string."""
@@ -115,6 +115,18 @@ class XPathElement:
             raise XPathSelectionError("XPath expression did not return any elements.")
         return children.one()
 
+    def child_or_none(
+        self,
+        element: Union[str, ele],
+    ) -> Optional["XPathElement"]:
+        """Return the first direct child matching the given tag or XPath expression, or None if not found."""
+        children = self.children(element)
+        if not isinstance(children, XPathElementList):
+            raise XPathSelectionError("XPath expression did not return any elements.")
+        if children.len() == 0:
+            return None
+        return children.one()
+
     def has_single_child(
         self,
         element: Union[str, ele],
@@ -149,6 +161,18 @@ class XPathElement:
         descendants = self.descendants(element)
         if not isinstance(descendants, XPathElementList):
             raise XPathSelectionError("XPath expression did not return any elements.")
+        return descendants.one()
+
+    def descendant_or_none(
+        self,
+        element: Union[str, ele],
+    ) -> Optional["XPathElement"]:
+        """Return the first descendant matching the given tag or XPath expression, or None if not found."""
+        descendants = self.descendants(element)
+        if not isinstance(descendants, XPathElementList):
+            raise XPathSelectionError("XPath expression did not return any elements.")
+        if descendants.len() == 0:
+            return None
         return descendants.one()
 
     def has_single_descendant(
@@ -246,7 +270,9 @@ class XPathElement:
         """Get the set of values for the given attribute."""
         if key not in self._ele.attrib:
             return None
-        return set([v for v in re.split(r"\s+", self._ele.attrib.get(key).strip()) if v])
+        return set(
+            [v for v in re.split(r"\s+", self._ele.attrib.get(key).strip()) if v]
+        )
 
     def get_attr_list(
         self,
@@ -289,7 +315,9 @@ class XPathElement:
         try:
             self._ele.remove(child._ele)
         except ValueError as e:
-            raise XPathModificationError("The element to be removed is not a child of this element.") from e
+            raise XPathModificationError(
+                "The element to be removed is not a child of this element."
+            ) from e
 
     def clear(
         self,
@@ -362,7 +390,9 @@ class XPathElementList:
         if self.empty():
             raise XPathSelectionError("No elements found in the list.")
         if self.len() != 1:
-            raise XPathSelectionError("Element list does not contain exactly one element.")
+            raise XPathSelectionError(
+                "Element list does not contain exactly one element."
+            )
         return self._eles[0]
 
     def first(
@@ -389,7 +419,9 @@ class XPathElementList:
         if isinstance(key, int):
             return self._eles[key]
         elif isinstance(key, slice):
-            return XPathElementList([e.raw() for e in self._eles[key.start : key.stop : key.step]])
+            return XPathElementList(
+                [e.raw() for e in self._eles[key.start : key.stop : key.step]]
+            )
         else:
             raise TypeError
 
